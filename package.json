@@ -1,8 +1,8 @@
 {
   "type": "module",
-  "name": "ts-tidy",
+  "name": "yab-is-yet-another-builder",
   "version": "1.0.0",
-  "description": "manipulate TypeScript source files to make them better",
+  "description": "Does stuff to your js to make it work better, especially with ESM and those stupid relative imports missing the \".js\" extension that are emitted by TypeScript. This will watch your build dir and safely add the \".js\" extension where appropriate.",
   "main": "src/index.ts",
   "repository": "git@github.com:djfm/ts-experiments.git",
   "author": "djfm <fm.de.jouvencel@gmail.com>",
@@ -30,7 +30,9 @@
   "dependencies": {
     "@babel/parser": "^7.14.7",
     "@babel/types": "^7.14.5",
+    "@types/chokidar": "^2.1.3",
     "@types/minimist": "^1.2.1",
+    "chokidar": "^3.5.2",
     "minimist": "^1.2.5"
   }
 }
