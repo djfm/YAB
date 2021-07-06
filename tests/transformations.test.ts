@@ -278,8 +278,8 @@ describe('applying transformations', () => {
 
   test([
     'two transformations on different lines,',
-    'one of which introduces a new line',
-    '- most simple of such scenarios',
+    'one of which introduces a new line,',
+    'most simple scenario',
   ].join(' '), () => {
     const source = src`
     $..........$
@@ -370,7 +370,7 @@ describe('applying transformations', () => {
   });
 
   test([
-    'that an error is thrown if there are',
+    'an error is thrown if there are',
     'two overlapping transformations',
     '- different start lines',
   ].join(' '), () => {
@@ -393,7 +393,7 @@ describe('applying transformations', () => {
   });
 
   test([
-    'that an error is thrown if there are',
+    'an error is thrown if there are',
     'two overlapping transformations',
     '- same start line',
   ].join(' '), () => {
