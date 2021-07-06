@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "jsx": "react",
+    "downlevelIteration": true,
+    "target": "ESNext",
+    "module": "CommonJS",
+    "strictNullChecks": true
+  }
+}
