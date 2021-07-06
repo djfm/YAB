@@ -2,7 +2,7 @@ import {
   applyTransformations,
   sortTransformations,
   Transformation,
-} from '../src/index';
+} from '../src/transformation';
 
 const mkTransform = (
   startLine: number,

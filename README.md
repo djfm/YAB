@@ -83,7 +83,7 @@ It will start **watching and adding the `.js` extensions** where it thinks
 it makes sense.
 
 ```
-node js/yab.js path/to/dir
+node js/bin.js path/to/dir
 ```
 
 **You can hav *YAB* watch the `outDir` of your `TypeScript` project without any issue.**
