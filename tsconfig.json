@@ -5,7 +5,8 @@
     "jsx": "react",
     "downlevelIteration": true,
     "target": "ESNext",
-    "module": "CommonJS",
-    "strictNullChecks": true
+    "module": "ESNext",
+    "strictNullChecks": true,
+    "outDir": "./build"
   }
 }
