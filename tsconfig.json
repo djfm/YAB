@@ -1,12 +1,14 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
+    "moduleResolution": "node",
     "sourceMap": true,
     "jsx": "react",
     "downlevelIteration": true,
     "target": "ESNext",
     "module": "ESNext",
     "strictNullChecks": true,
-    "outDir": "./build"
-  }
+    "outDir": "./transpile"
+  },
+  "include": ["src/**/*"]
 }

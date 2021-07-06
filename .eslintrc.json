@@ -29,6 +29,9 @@
         ".ts": "never",
         ".tsx": "never"
       }
-    ]
+    ],
+    "no-restricted-syntax": 0,
+    "implicit-arrow-linebreak": 0,
+    "@typescript-eslint/ban-ts-comment": 0
   }
 }
