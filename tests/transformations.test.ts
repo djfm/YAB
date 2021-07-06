@@ -1,4 +1,3 @@
-import { resolveTripleslashReference } from 'typescript';
 import {
   applyTransformations,
   sortTransformations,
