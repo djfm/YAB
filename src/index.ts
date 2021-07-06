@@ -185,7 +185,167 @@ const transform = async (
 
 const [inputFilePath] = minimist(process.argv.slice(2))._;
 
-const processFile = async (filePath: string) => {
+type TransformationResult = {
+  processedSourceLines: string[]
+  remainingSourceLines: string[]
+  locationInSource: Location
+}
+
+const applySingleTransformation = (
+  transformation: Transformation,
+  sourceLines: string[],
+  location: Location,
+): TransformationResult => {
+  if (transformation.start.line < location.line) {
+    throw new Error(
+      'transformation cannot be applied - started before',
+    );
+  }
+
+  if (
+    location.line + sourceLines.length
+      < transformation.start.line
+  ) {
+    throw new Error(
+      'transformation cannot be applied - not enough input lines',
+    );
+  }
+
+  const offsetStartLine = transformation.start.line
+    - location.line;
+
+  const linesBefore = sourceLines.slice(
+    0,
+    offsetStartLine,
+  );
+
+  const linesAfter = sourceLines.slice(
+    offsetStartLine + 1,
+  );
+
+  const lineToModify = sourceLines[offsetStartLine];
+
+  const leftOfSource = lineToModify.slice(
+    0,
+    transformation.start.column,
+  );
+
+  const source = lineToModify.slice(
+    transformation.start.column,
+    transformation.end.column,
+  );
+
+  if (source !== transformation.originalValue) {
+    throw new Error(
+      `did not find expected source string - got "${
+        source
+      }" instead of ${
+        transformation.originalValue
+      }`,
+    );
+  }
+
+  const rightOfSource = lineToModify.slice(
+    transformation.end.column,
+  );
+
+  const newModifiedLine = [
+    leftOfSource,
+    transformation.newValue,
+    rightOfSource,
+  ].join('');
+
+  return {
+    processedSourceLines: linesBefore.concat(
+      newModifiedLine,
+    ),
+    remainingSourceLines: linesAfter,
+    locationInSource: {
+      line: location.line + linesBefore.length + 1,
+      column: 0,
+    },
+  };
+};
+
+const recursivelyApplyTransformations = (
+  transformations: Transformation[],
+  sourceLines: string[],
+  location: Location,
+) : TransformationResult => {
+  if (transformations.length === 0) {
+    return {
+      processedSourceLines: [],
+      remainingSourceLines: [],
+      locationInSource: location,
+    };
+  }
+
+  const [t, ...remainingTransformations] = transformations;
+
+  const tResult = applySingleTransformation(
+    t,
+    sourceLines,
+    location,
+  );
+
+  if (remainingTransformations.length === 0) {
+    const processedSourceLines = tResult
+      .processedSourceLines.concat(
+        tResult.remainingSourceLines,
+      );
+
+    return {
+      processedSourceLines,
+      remainingSourceLines: [],
+      locationInSource: {
+        line: processedSourceLines.length + 1,
+        column: processedSourceLines[
+          processedSourceLines.length - 1
+        ].length,
+      },
+    };
+  }
+
+  const restResult = recursivelyApplyTransformations(
+    remainingTransformations,
+    tResult.remainingSourceLines,
+    tResult.locationInSource,
+  );
+
+  return {
+    ...restResult,
+    processedSourceLines: tResult.processedSourceLines.concat(
+      restResult.processedSourceLines,
+    ),
+  };
+};
+
+export const applyTransformations = (
+  unorderedTransformations: Transformation[],
+  sourceCode: string,
+): string => {
+  const transformations = sortTransformations(
+    unorderedTransformations,
+  );
+
+  const sourceLines = sourceCode.split('\n');
+  const location = {
+    line: 1,
+    column: 0,
+  };
+
+  const result = recursivelyApplyTransformations(
+    transformations,
+    sourceLines,
+    location,
+  );
+
+  return result.processedSourceLines.join('\n');
+};
+
+const processFile = async (
+  filePath: string,
+): Promise<number> => {
   try {
     const s = await stat(filePath);
     if (!s.isFile()) {
@@ -203,11 +363,19 @@ const processFile = async (filePath: string) => {
     filePath,
   });
 
-  const orderedTransformations = sortTransformations(
+  const transformedSource = applyTransformations(
     transformations,
+    sourceCode,
   );
 
-  console.log(orderedTransformations);
+  console.log(transformedSource);
+
+  return transformations.length;
 };
 
-await processFile(inputFilePath);
+if (process.env.EXEC_TIDY) {
+  processFile(inputFilePath).then(
+    console.log,
+    console.log,
+  );
+}
