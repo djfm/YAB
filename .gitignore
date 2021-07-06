@@ -7,3 +7,6 @@
 !.yarn/versions
 
 tmp
+
+js/*
+!js/.eslintrc.json

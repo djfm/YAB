@@ -8,7 +8,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "strictNullChecks": true,
-    "outDir": "./transpile"
+    "outDir": "./js"
   },
   "include": ["src/**/*"]
 }
