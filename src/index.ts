@@ -241,16 +241,21 @@ const applySingleTransformation = (
     );
   }
 
+  // lines before our target that are sure
+  // to remain unchanged
   const linesBefore = sourceLines.slice(
     0,
     convertedStart.line - 1,
   );
 
+  // lines that we will change, totally or partially
   const linesToModify = sourceLines.slice(
     convertedStart.line - 1,
     convertedEnd.line,
   );
 
+  // lines after our target that are sure
+  // to remain unchanged
   const linesAfter = sourceLines.slice(
     convertedEnd.line,
   );
