@@ -37,6 +37,7 @@ const hasKnownExtension = (str) => {
 };
 const transform = async (sourceCode, info) => {
     const transformations = [];
+    const metaData = {};
     const AST = babelParser.parse(sourceCode, {
         sourceType: 'module',
         plugins: [
@@ -53,6 +54,17 @@ const transform = async (sourceCode, info) => {
     }
     const { body } = program;
     for (const node of body) {
+        if (node.trailingComments) {
+            const { trailingComments } = node;
+            for (const comment of trailingComments) {
+                if (comment.loc.start.line === comment.loc.end.line) {
+                    const [, maybeSourceMappingURL] = comment.value.split('sourceMappingURL=');
+                    if (maybeSourceMappingURL) {
+                        metaData.sourceMappingURL = maybeSourceMappingURL;
+                    }
+                }
+            }
+        }
         if (node.type === 'ImportDeclaration') {
             const { source } = node;
             if (source.type !== 'StringLiteral') {
@@ -111,7 +123,7 @@ const transform = async (sourceCode, info) => {
             }
         }
     }
-    return transformations;
+    return [transformations, metaData];
 };
 const [inputFilePath] = minimist(process.argv.slice(2))._;
 const applySingleTransformation = (transformation, sourceLines, location) => {
@@ -175,8 +187,64 @@ const recursivelyApplyTransformations = (transformations, sourceLines, location)
         processedSourceLines: tResult.processedSourceLines.concat(restResult.processedSourceLines),
     };
 };
+/**
+ * Checks whether there are overlapping transformations
+ * within the provided array.
+ *
+ * As indicated by the parameter type, the function
+ * assumes that the transformations have already been
+ * sorted (with sortTransformations).
+ */
+const transformationsOverlap = (sortedTransformations) => {
+    // eslint-disable-next-line no-labels
+    outerLoop: for (let i = 0; i < sortedTransformations.length - 1; i += 1) {
+        for (let j = i + 1; j < sortedTransformations.length; j += 1) {
+            const fst = sortedTransformations[i];
+            const snd = sortedTransformations[j];
+            if (fst.end.line < snd.start.line) {
+                /**
+                 * represents a situation like this:
+                 *
+                 * FFF
+                 * FFF
+                 *
+                 * SSS
+                 * SSS
+                 *
+                 * works because transformations are ordered
+                 * primarily by ascending start line
+                 */
+                // eslint-disable-next-line no-continue,no-labels
+                continue outerLoop;
+            }
+            if (fst.end.line > snd.start.line) {
+                // this one is obvious
+                return true;
+            }
+            if (fst.end.line === snd.start.line) {
+                /**
+                 * the situation is like:
+                 *
+                 * FFF
+                 * F?S
+                 * SSS
+                 */
+                if (fst.end.column < snd.start.column) {
+                    // eslint-disable-next-line no-continue,no-labels
+                    continue outerLoop;
+                }
+                // overlap
+                return true;
+            }
+        }
+    }
+    return false;
+};
 export const applyTransformations = (unorderedTransformations, sourceCode) => {
     const transformations = sortTransformations(unorderedTransformations);
+    if (transformationsOverlap(transformations)) {
+        throw new Error('overlapping transformations cannot be applied');
+    }
     const sourceLines = sourceCode.split('\n');
     const location = {
         line: 1,
@@ -197,11 +265,17 @@ const processFile = async (filePath) => {
     }
     const buffer = await readFile(filePath);
     const sourceCode = buffer.toString();
-    const transformations = await transform(sourceCode, {
+    const [transformations, metaData] = await transform(sourceCode, {
         filePath,
     });
     const transformedSource = applyTransformations(transformations, sourceCode);
-    console.log(transformedSource);
+    /*
+    console.log(JSON.stringify(
+      { transformations, transformedSource, metaData },
+      null,
+      2,
+    ));
+    */
     return transformations.length;
 };
 if (process.env.EXEC_TIDY) {

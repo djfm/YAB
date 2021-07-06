@@ -89,4 +89,101 @@ describe('applying transformations', () => {
 
     expect(transformedSource).toBe(expected);
   });
+
+  test('two valid transformations', () => {
+    const source = src`
+    $          $
+    $    abc   $
+    $          $
+    $def       $
+    $          $
+    `;
+
+    const t: Transformation = {
+      start: {
+        line: 2,
+        column: 4,
+      },
+      end: {
+        line: 2,
+        column: 7,
+      },
+      originalValue: 'abc',
+      newValue: 'xy',
+    };
+
+    const u: Transformation = {
+      start: {
+        line: 4,
+        column: 0,
+      },
+      end: {
+        line: 4,
+        column: 3,
+      },
+      originalValue: 'def',
+      newValue: 'poulpe',
+    };
+
+    const expected = src`
+    $          $
+    $    xy   $
+    $          $
+    $poulpe       $
+    $          $
+    `;
+
+    const transformedSource = applyTransformations(
+      [t, u],
+      source,
+    );
+
+    expect(transformedSource).toBe(expected);
+  });
+
+  test([
+    'that an error is thrown if there are',
+    'two overlapping transformations',
+    '- different start lines',
+  ].join(' '), () => {
+    const t = mkTransform(
+      10, 0,
+      10, 5,
+    );
+
+    const u = mkTransform(
+      9, 7,
+      10, 1,
+    );
+
+    expect(
+      () => applyTransformations(
+        [t, u],
+        '',
+      ),
+    ).toThrow('overlapping transformations');
+  });
+
+  test([
+    'that an error is thrown if there are',
+    'two overlapping transformations',
+    '- same start line',
+  ].join(' '), () => {
+    const t = mkTransform(
+      10, 0,
+      10, 5,
+    );
+
+    const u = mkTransform(
+      10, 3,
+      10, 4,
+    );
+
+    expect(
+      () => applyTransformations(
+        [t, u],
+        '',
+      ),
+    ).toThrow('overlapping transformations');
+  });
 });
