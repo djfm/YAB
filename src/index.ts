@@ -13,6 +13,40 @@ import BT from '@babel/types';
 
 import chokidar from 'chokidar';
 
+type voidReturningFunction = (
+  ...args: unknown[]
+) => void;
+const nospam = (nMilliseconds: number) =>
+  (fn: voidReturningFunction): voidReturningFunction => {
+    let lastCallTime = 0;
+    let currentTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const wrappedFn = (...args: unknown[]) => {
+      const tooEarly = () =>
+        (Date.now() - lastCallTime) < nMilliseconds;
+
+      const scheduleCall = () => {
+        if (currentTimeout) {
+          clearTimeout(currentTimeout);
+        }
+
+        currentTimeout = setTimeout(
+          () => wrappedFn(...args),
+          nMilliseconds,
+        );
+      };
+
+      if (tooEarly()) {
+        scheduleCall();
+      } else {
+        lastCallTime = Date.now();
+        fn(...args);
+      }
+    };
+
+    return wrappedFn;
+  };
+
 export type Location = {
   line: number
   column: number
