@@ -299,9 +299,6 @@ describe('applying transformations', () => {
       },
       originalValue: 'ab',
       newValue: 'A\nB',
-      metaData: {
-        t: true,
-      },
     };
 
     const u: Transformation = {
@@ -315,8 +312,7 @@ describe('applying transformations', () => {
       },
       originalValue: 'cd',
       newValue: 'CD',
-      metaData: {
-        u: true,
+    };
       },
     };
 
