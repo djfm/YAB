@@ -23,7 +23,6 @@
       "@typescript-eslint"
   ],
   "rules": {
-    "no-console": 0,
     "import/extensions": [
       1, {
         ".ts": "never",
