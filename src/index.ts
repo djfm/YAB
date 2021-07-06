@@ -647,7 +647,6 @@ const processFile = async (
         nt !== 1 ? 's' : ''
       } in "${filePath}":`,
       ...details,
-      '',
     ].join('\n'));
   }
 
@@ -675,7 +674,7 @@ const startWatching = async (dirPath: string): Promise<void> => {
     bail('Directory does not exist.');
   }
 
-  log.info(`started watching directory ${dirPath}\n`);
+  log.info(`started watching directory ${dirPath}`);
 
   let nDirs = 0;
   let nFiles = 0;
@@ -686,7 +685,7 @@ const startWatching = async (dirPath: string): Promise<void> => {
       `watching ${nDirs
       } directories totalling ${nFiles
       } files, of which ${nProcessable
-      } are of interest to us\n`,
+      } are of interest to us`,
     ),
   );
 
@@ -732,8 +731,8 @@ const startWatching = async (dirPath: string): Promise<void> => {
 };
 
 if (process.env.YAB_RUN) {
-  log('Welcome to YAB\n');
-  log("  - tsc's ideal build companion\n");
+  log('Welcome to YAB');
+  log("  - tsc's ideal build companion");
 
   if (process.env.YAB_RUN === 'watch') {
     startWatching(inputPathArgument);
