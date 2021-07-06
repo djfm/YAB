@@ -30,6 +30,12 @@ const src = (str: TemplateStringsArray): string =>
     .map((line) => line.trim().slice(1, -1))
     .join('\n');
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const showSrc = (str: string): string => str
+  .split('\n')
+  .map((line) => `$${line.replace(/\s/g, '.')}$`)
+  .join('\n');
+
 describe('sorting transformations in increasing order', () => {
   test('should work for transformations on different lines', () => {
     const t1 = mkTransform(1, 1, 1, 2);
@@ -180,6 +186,66 @@ describe('applying transformations', () => {
     $ AB   CD  $
     $          $
     $          $
+    `;
+
+    const transformedSource = applyTransformations(
+      [t, u],
+      source,
+    );
+
+    expect(transformedSource).toBe(expected);
+  });
+
+  test([
+    'two transformations on different lines,',
+    'one of which introduces a new line',
+    '- most simple of such scenarios',
+  ].join(' '), () => {
+    const source = src`
+    $          $
+    $ ab       $
+    $          $
+    $      cd  $
+    `;
+
+    const t: Transformation = {
+      start: {
+        line: 2,
+        column: 1,
+      },
+      end: {
+        line: 2,
+        column: 3,
+      },
+      originalValue: 'ab',
+      newValue: 'A\nB',
+      metaData: {
+        t: true,
+      },
+    };
+
+    const u: Transformation = {
+      start: {
+        line: 4,
+        column: 6,
+      },
+      end: {
+        line: 4,
+        column: 8,
+      },
+      originalValue: 'cd',
+      newValue: 'CD',
+      metaData: {
+        u: true,
+      },
+    };
+
+    const expected = src`
+    $          $
+    $ A$
+    $B       $
+    $          $
+    $      CD  $
     `;
 
     const transformedSource = applyTransformations(

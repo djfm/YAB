@@ -20,6 +20,7 @@ export type Transformation = {
   end: Location
   originalValue: string
   newValue: string
+  metaData?: Record<string, unknown>
 }
 
 export type SortedTransformationsArray = Readonly<Transformation[]>
@@ -224,6 +225,9 @@ const applySingleTransformation = (
   sourceLines: string[],
   convertToTransformed: OriginalToTransformedConverter,
 ): TransformationResult => {
+  if (transformation?.metaData?.t || transformation?.metaData?.t) {
+    debugger;
+  }
   const convertedStart = convertToTransformed(
     transformation.start,
   );
@@ -232,7 +236,7 @@ const applySingleTransformation = (
     transformation.end,
   );
 
-  const isMultiLine = convertedStart.line
+  const isSourceMultiLine = convertedStart.line
     < convertedEnd.line;
 
   if (sourceLines.length < convertedStart.line) {
@@ -268,13 +272,13 @@ const applySingleTransformation = (
   const rightPartOfFirstModifiedLine = linesToModify[0]
     .slice(
       convertedStart.column,
-      isMultiLine ? undefined : convertedEnd.column,
+      isSourceMultiLine ? undefined : convertedEnd.column,
     );
 
   // the part in the last modified line that we will transform
   // it's empty in the single line case because we have it captured
   // in the rightPartOfFirstModifiedLine already
-  const leftPartOfLastModifiedLine = isMultiLine
+  const leftPartOfLastModifiedLine = isSourceMultiLine
     ? linesToModify[linesToModify.length - 1]
       .slice(0, convertedEnd.column)
     : '';
@@ -309,6 +313,8 @@ const applySingleTransformation = (
     );
   }
 
+  const newValueLines = transformation.newValue.split('\n');
+
   const newModifiedLines = [
     // the part of the first affected line that
     // we did not alter
@@ -331,7 +337,32 @@ const applySingleTransformation = (
   // TODO won't work in a ton of cases,
   // this is just a proof of concept and
   // a draft
-  const newConverter = (loc: Location) => loc;
+  const newConverter = (loc: Location) => {
+    // we would return baseLoc if we hadn't changed
+    // anything
+    const baseLoc = convertToTransformed(loc);
+
+    // the adjustment factor to apply to baseLoc.line
+    // if we need to - but we don't necessarily need to,
+    // depending on whether the target of baseLoc was
+    // affected by our operation
+    const deltaLines = newModifiedLines.length
+      - linesToModify.length;
+
+    if (baseLoc.line > convertedEnd.line) {
+      // we just need to offset the line,
+      // the column couldn't have changed
+
+      return {
+        line: baseLoc.line + deltaLines,
+        column: baseLoc.column,
+      };
+    }
+
+    // the default is to assume the coordinates
+    // haven't changed
+    return baseLoc;
+  };
 
   return {
     sourceLines: newSourceLines,
