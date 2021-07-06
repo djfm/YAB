@@ -483,7 +483,7 @@ const applySingleTransformation = (
 const recursivelyApplyTransformations = (
   transformations: readonly Transformation[],
   previousResult: TransformationResult,
-) : TransformationResult => {
+): TransformationResult => {
   if (transformations.length === 0) {
     return previousResult;
   }
