@@ -675,15 +675,54 @@ const startWatching = async (dirPath: string): Promise<void> => {
     bail('Directory does not exist.');
   }
 
-  log.info(`started watching directory ${dirPath}`);
-  log.info('...');
+  log.info(`started watching directory ${dirPath}\n`);
+
+  let nDirs = 0;
+  let nFiles = 0;
+  let nProcessable = 0;
+
+  const report = nospam(500)(
+    () => log(
+      `watching ${nDirs
+      } directories totalling ${nFiles
+      } files, of which ${nProcessable
+      } are of interest to us\n`,
+    ),
+  );
+
+  const isProcessable = (p: string) =>
+    p.endsWith('.js')
+    && !isPathBlacklisted(p);
 
   chokidar.watch(dirPath).on('all', (event, eventPath) => {
+    if (event === 'add') {
+      nFiles += 1;
+      if (isProcessable(eventPath)) {
+        nProcessable += 1;
+        report();
+      }
+    }
+
+    if (event === 'addDir') {
+      nDirs += 1;
+      report();
+    }
+
+    if (event === 'unlink') {
+      nFiles -= 1;
+      if (isProcessable(eventPath)) {
+        nProcessable -= 1;
+        report();
+      }
+    }
+
+    if (event === 'unlinkDir') {
+      nDirs -= 1;
+      report();
+    }
+
     if (event === 'add' || event === 'change') {
-      if (
-        eventPath.endsWith('.js')
-          && !isPathBlacklisted(eventPath)
-      ) {
+      if (isProcessable(eventPath)) {
         processFile(eventPath, {
           assumePathAndTypeValid: true,
         });
@@ -693,6 +732,9 @@ const startWatching = async (dirPath: string): Promise<void> => {
 };
 
 if (process.env.YAB_RUN) {
+  log('Welcome to YAB\n');
+  log("  - tsc's ideal build companion\n");
+
   if (process.env.YAB_RUN === 'watch') {
     startWatching(inputPathArgument);
   } else {
