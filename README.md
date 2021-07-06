@@ -18,7 +18,7 @@ This is quite useful, because, simply put:
   including their `.js` extensions**.
 
   I.e. writing **`import foo from './foo'` won't work any longer**,
-  even if './foo.js' is a correctly defined *JavaScript*
+  even if `./foo.js` is a correctly defined *JavaScript*
   source file that exists, is in the right place, and exports
   a valid ES6 module.
 
@@ -29,7 +29,7 @@ This is quite useful, because, simply put:
   **So what's the problem, you say?**
 
 - The problem is that **TypeScript, when it emits `import` statements**,
-  i.e. when you have set `"module": "ESNext"` in your `tsconfig.json`,
+  i.e. when you have set the `"module": "ESNext"` property in your `tsconfig.json`,
   **doesn't put the `.js` extension** in the transpiled *JavaScript* code
   that it generates - ever!
 
