@@ -8,5 +8,4 @@
 
 tmp
 
-js/*
-!js/.eslintrc.json
+js/exampleSourceFiles

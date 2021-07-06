@@ -12,13 +12,13 @@ import chokidar from 'chokidar';
 
 import {
   postpone,
-} from './util';
+} from './lib/util';
 
 import {
   applyTransformations,
   transform,
   Transformation,
-} from './transformation';
+} from './lib/transformation';
 
 type ProcessFileOptions = {
   assumePathAndTypeValid?: boolean
@@ -77,7 +77,7 @@ const bail = (errMessage: string, exitCode = 1): never => {
 const [inputPathArgument] = minimist(process.argv.slice(2))._;
 
 if (!inputPathArgument) {
-  bail('Please provide a path to a directory to watch.')
+  bail('Please provide a path to a directory to watch.');
 }
 
 // TODO update the source-maps

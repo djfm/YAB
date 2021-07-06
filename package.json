@@ -3,7 +3,7 @@
   "name": "yab-is-yet-another-builder",
   "version": "1.0.0",
   "description": "Does stuff to your js to make it work better, especially with ESM and those stupid relative imports missing the \".js\" extension that are emitted by TypeScript. This will watch your build dir and safely add the \".js\" extension where appropriate.",
-  "main": "src/index.ts",
+  "main": "js/bin.js",
   "repository": "git@github.com:djfm/ts-experiments.git",
   "author": "djfm <fm.de.jouvencel@gmail.com>",
   "license": "MIT",
@@ -13,7 +13,8 @@
     "build": "yarn tsc --project ./tsconfig.json",
     "dev": "yarn tsc --project ./tsconfig.json --watch",
     "test": "NODE_OPTIONS=--experimental-vm-modules yarn jest",
-    "tdd": "NODE_OPTIONS=--experimental-vm-modules yarn jest --watch"
+    "tdd": "NODE_OPTIONS=--experimental-vm-modules yarn jest --watch",
+    "watch": "node js/bin.js"
   },
   "devDependencies": {
     "@types/jest": "^26.0.23",
