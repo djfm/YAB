@@ -232,6 +232,9 @@ const applySingleTransformation = (
     transformation.end,
   );
 
+  const isMultiLine = convertedStart.line
+    < convertedEnd.line;
+
   if (sourceLines.length < convertedStart.line) {
     throw new Error(
       'transformation cannot be applied - not enough input lines',
@@ -243,25 +246,53 @@ const applySingleTransformation = (
     convertedStart.line - 1,
   );
 
+  const linesToModify = sourceLines.slice(
+    convertedStart.line - 1,
+    convertedEnd.line,
+  );
+
   const linesAfter = sourceLines.slice(
     convertedEnd.line,
   );
 
-  const lineToModify = sourceLines[convertedStart.line - 1];
+  // the part in the first modified line that we won't transform
+  const leftPartOfFirstModifiedLine = linesToModify[0]
+    .slice(0, convertedStart.column);
 
-  const leftOfSource = lineToModify.slice(
-    0,
-    convertedStart.column,
-  );
+  // the part in the first modified line that we will transform
+  const rightPartOfFirstModifiedLine = linesToModify[0]
+    .slice(
+      convertedStart.column,
+      isMultiLine ? undefined : convertedEnd.column,
+    );
 
-  const source = lineToModify.slice(
-    convertedStart.column,
-    convertedEnd.column,
-  );
+  // the part in the last modified line that we will transform
+  // it's empty in the single line case because we have it captured
+  // in the rightPartOfFirstModifiedLine already
+  const leftPartOfLastModifiedLine = isMultiLine
+    ? linesToModify[linesToModify.length - 1]
+      .slice(0, convertedEnd.column)
+    : '';
 
-  const rightOfSource = lineToModify.slice(
-    convertedEnd.column,
-  );
+  // the part in the last modified line that we won't transform
+  // works for both single and multi-line transformations
+  const rightPartOfLastModifiedLined = linesToModify[
+    linesToModify.length - 1
+  ].slice(convertedEnd.column);
+
+  const source = [
+    // half of the first modified line
+    rightPartOfFirstModifiedLine,
+
+    // the full lines that are neither the first line
+    // to be modified nor the last one
+    // - will be an empty list in the single line case
+    ...linesToModify.slice(1, -1),
+
+    // half of the last of the modified line
+    // - set to the empty string in the multi-line case
+    leftPartOfLastModifiedLine,
+  ].join('');
 
   if (source !== transformation.originalValue) {
     throw new Error(
@@ -273,16 +304,24 @@ const applySingleTransformation = (
     );
   }
 
-  const newModifiedLine = [
-    leftOfSource,
-    transformation.newValue,
-    rightOfSource,
-  ].join('');
+  const newModifiedLines = [
+    // the part of the first affected line that
+    // we did not alter
+    leftPartOfFirstModifiedLine,
 
-  const newSourceLines = linesBefore.concat(
-    newModifiedLine,
-    linesAfter,
-  );
+    // the replacement value that was specified
+    transformation.newValue,
+
+    // the part of the last affected line
+    // that we did not alter
+    rightPartOfLastModifiedLined,
+  ].join('').split('\n');
+
+  const newSourceLines = [
+    ...linesBefore,
+    ...newModifiedLines,
+    ...linesAfter,
+  ];
 
   // TODO won't work in a ton of cases,
   // this is just a proof of concept and
