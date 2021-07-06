@@ -40,12 +40,75 @@ export const sortTransformations = (
     return a.start.column - b.start.column;
   });
 
+const log = (...args: unknown[]) => {
+  // eslint-disable-next-line no-console
+  console.log(...args);
+};
+
 const printUsage = () => {
-  console.log('node index.js path/to/sourceFile.ts');
+  const usage = `
+YAB welcomes you. YAB is Yet Another Build tool.
+
+# Usage:
+========
+
+> YAB_RUN={X} node js/index.js {some/path}
+          ***                  ***********
+
+The default action is:
+----------------------
+
+> to try and recover from the file-extension
+> mess of TypeScript imports
+> when using "type": "module" in package.json
+> and "module": "ESNext" in tsconfig.json, that is,
+> simply put, just adding ".js" to relative imports
+> where it makes sense
+
+and it requires **no setup**
+
+# There are TWO ways of invoking the YAB program:
+=================================================
+
+let me repeat the command:
+
+>   YAB_RUN={X} node js/index.js {some/path}
+            ***                  ***********
+
+    ##1.)  with {X} === watch and {some/path} pointing to a directory
+    =====       ***     *****     ***********               *********
+
+                          containing ".js" files
+                          (typically the "compilerOptions.outDir"
+                          of a "tsconfig.json")
+
+          then
+
+              the default action will be performed on all the
+              ".js" files in the provided directory, and the
+              files will be watched for changes, so that
+              whenever TypeScript emits some new absurdity,
+              YAB will attempt to correct it
+
+
+    ##2.) with {X} === 1 and {some/path} pointing to a ".js" file
+    =====      ***           ***********                ****
+
+         then
+
+              the default action  will be performed on that file
+              (it can be useful for testing / debugging)
+
+I hope this tool solves more issues than it creates.
+
+Sincerely yours,
+djfm.
+`;
+  log(usage.trim());
 };
 
 const bail = (errMessage: string, exitCode = 1): never => {
-  console.log(`Error: ${errMessage}`);
+  log(`\n>> Error: ${errMessage}\n`);
   printUsage();
   process.exit(exitCode);
 };
