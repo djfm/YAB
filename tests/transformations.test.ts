@@ -1,3 +1,4 @@
+import { resolveTripleslashReference } from 'typescript';
 import {
   applyTransformations,
   sortTransformations,
@@ -21,6 +22,26 @@ const mkTransform = (
   originalValue: '',
   newValue: '',
 });
+
+const tryToApplyTransformationBrutally = (
+  transformation: Transformation,
+  source: string,
+): string | undefined => {
+  const matchIsUnique = (source.indexOf(
+    transformation.originalValue,
+  ) === source.lastIndexOf(
+    transformation.originalValue,
+  )) !== undefined;
+
+  if (!matchIsUnique) {
+    return undefined;
+  }
+
+  return source.replace(
+    transformation.originalValue,
+    transformation.newValue,
+  );
+};
 
 const src = (str: TemplateStringsArray): string =>
   str
@@ -62,6 +83,40 @@ describe('sorting transformations in increasing order', () => {
 });
 
 describe('applying transformations', () => {
+  const verifyExpected = (
+    transformations: Transformation[],
+    expected: string, source: string,
+  ) => {
+    const maybeExpected = transformations.reduce(
+      (text: string | undefined, t: Transformation) => {
+        if (text === undefined) {
+          return text;
+        }
+
+        const maybeTransformed = tryToApplyTransformationBrutally(
+          t, text,
+        );
+
+        return maybeTransformed;
+      },
+      source,
+    );
+
+    if (maybeExpected !== undefined) {
+      if (maybeExpected !== expected) {
+        throw new Error([
+          'You may have made a mistake in defining',
+          'the expected value for this test, as another',
+          '- less subtle algorithm - ',
+          'computes a different result. This may be wrong,',
+          "it's just a warning. If you are sure the expected",
+          'value is correct, then remove the "verifyExpected"',
+          'call from the failing test.',
+        ].join(' '));
+      }
+    }
+  };
+
   test('a single valid transformation', () => {
     const source = src`
     $..........$
@@ -92,9 +147,16 @@ describe('applying transformations', () => {
     $..........$
     `;
 
+    const transformations = [t];
+
     const transformedSource = applyTransformations(
-      [t],
+      transformations,
       source,
+    );
+
+    verifyExpected(
+      transformations,
+      expected, source,
     );
 
     expect(transformedSource).toBe(expected);
@@ -143,8 +205,15 @@ describe('applying transformations', () => {
     $..........$
     `;
 
+    const transformations = [t, u];
+
+    verifyExpected(
+      transformations,
+      expected, source,
+    );
+
     const transformedSource = applyTransformations(
-      [t, u],
+      transformations,
       source,
     );
 
@@ -192,8 +261,15 @@ describe('applying transformations', () => {
     $..........$
     `;
 
+    const transformations = [t, u];
+
+    verifyExpected(
+      transformations,
+      expected, source,
+    );
+
     const transformedSource = applyTransformations(
-      [t, u],
+      transformations,
       source,
     );
 
@@ -252,8 +328,15 @@ describe('applying transformations', () => {
     $......CD..$
     `;
 
+    const transformations = [t, u];
+
+    verifyExpected(
+      transformations,
+      expected, source,
+    );
+
     const transformedSource = applyTransformations(
-      [t, u],
+      transformations,
       source,
     );
 
