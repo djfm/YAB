@@ -2,8 +2,8 @@ import {
   x,
   y,
   z,
-} from './mod';
+} from './moduleB';
 
-import lambda from './otherMod';
+import lambda from './moduleA';
 
 console.log(x + y + z, lambda);

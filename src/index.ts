@@ -584,7 +584,7 @@ const processFile = async (
   const buffer = await readFile(filePath);
   const sourceCode = buffer.toString();
 
-  const [transformations, metaData] = await transform(sourceCode, {
+  const [transformations] = await transform(sourceCode, {
     filePath,
   });
 
@@ -598,9 +598,16 @@ const processFile = async (
 
     await writeFile(filePath, transformedSource);
 
-    log.info(
-      `${nt} transformations performed in "${filePath}"`,
+    const details = transformations.map(
+      (t: Transformation) =>
+        `    ${t.originalValue} => ${t.newValue}`,
     );
+
+    log.info([
+      `performed ${nt} transformations in "${filePath}":`,
+      ...details,
+      '',
+    ].join('\n'));
   }
 
   return nt;
@@ -627,11 +634,10 @@ const startWatching = async (dirPath: string): Promise<void> => {
     bail('Directory does not exist.');
   }
 
-  log.info(`starting to watch directory ${dirPath}`);
+  log.info(`started watching directory ${dirPath}`);
+  log.info('...');
 
   chokidar.watch(dirPath).on('all', (event, eventPath) => {
-    console.log(event, eventPath);
-
     if (event === 'add' || event === 'change') {
       if (
         eventPath.endsWith('.js')
