@@ -10,6 +10,8 @@ import minimist from 'minimist';
 import babelParser from '@babel/parser';
 import BT from '@babel/types';
 
+import chokidar from 'chokidar';
+
 export type Location = {
   line: number
   column: number
@@ -44,6 +46,11 @@ const log = (...args: unknown[]) => {
   // eslint-disable-next-line no-console
   console.log(...args);
 };
+
+/** will be improved later */
+log.info = log;
+log.warning = log;
+log.error = log;
 
 const printUsage = () => {
   const usage = `
@@ -268,7 +275,7 @@ const transform = async (
   return [transformations, metaData];
 };
 
-const [inputFilePath] = minimist(process.argv.slice(2))._;
+const [inputPathArgument] = minimist(process.argv.slice(2))._;
 
 type OriginalToTransformedConverter = (
   originalLocation: Location
@@ -549,6 +556,9 @@ const processFile = async (
       bail('Path does not point to a file.');
     }
   } catch (e) {
+    if (e.code !== 'ENOENT') {
+      bail(`Unexpected error ${e.code}`);
+    }
     bail('File does not exist.');
   }
 
@@ -565,23 +575,39 @@ const processFile = async (
     sourceCode,
   );
 
-  /*
   console.log(JSON.stringify(
     { transformations, transformedSource, metaData },
     null,
     2,
   ));
-  */
 
   return transformations.length;
 };
 
-if (process.env.EXEC_TIDY) {
-  processFile(inputFilePath).then(
-    console.log,
-    console.log,
-  );
-}
+const startWatching = (dirPath: string): void => {
+  log.info(`starting to watch directory ${dirPath}`);
+};
+
+if (process.env.YAB_RUN) {
+  if (process.env.YAB_RUN === 'watch') {
+    try {
+      const s = await stat(inputPathArgument);
+      if (!s.isDirectory()) {
+        bail('Path does not point to a directory.');
+      }
+    } catch (e) {
+      if (e.code !== 'ENOENT') {
+        bail(`Unexpected error ${e.code}`);
+      }
+      bail('Directory does not exist.');
+    }
+    startWatching(inputPathArgument);
+  } else {
+    processFile(inputPathArgument).then(
+      console.log,
+      console.log,
+    );
+  }
 }
 
 // TODO update the source-maps
