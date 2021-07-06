@@ -9,7 +9,9 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "build": "yarn tsc --project ./tsconfig.json",
+    "dev": "yarn tsc --project ./tsconfig.json --watch"
   },
   "devDependencies": {
     "@types/node": "^16.0.0",
