@@ -313,8 +313,6 @@ describe('applying transformations', () => {
       originalValue: 'cd',
       newValue: 'CD',
     };
-      },
-    };
 
     const expected = src`
     $..........$
@@ -325,6 +323,81 @@ describe('applying transformations', () => {
     `;
 
     const transformations = [t, u];
+
+    verifyExpected(
+      transformations,
+      expected, source,
+    );
+
+    const transformedSource = applyTransformations(
+      transformations,
+      source,
+    );
+
+    expect(transformedSource).toBe(expected);
+  });
+
+  test([
+    'three transformations on different lines,',
+    'two of which introduces a new line',
+  ].join(' '), () => {
+    const source = src`
+    $..........$
+    $.ab.......$
+    $....cde...$
+    $......fg..$
+    `;
+
+    const t: Transformation = {
+      start: {
+        line: 2,
+        column: 1,
+      },
+      end: {
+        line: 2,
+        column: 3,
+      },
+      originalValue: 'ab',
+      newValue: 'A\nB',
+    };
+
+    const u: Transformation = {
+      start: {
+        line: 3,
+        column: 4,
+      },
+      end: {
+        line: 3,
+        column: 7,
+      },
+      originalValue: 'cde',
+      newValue: 'C\nD',
+    };
+
+    const v: Transformation = {
+      start: {
+        line: 4,
+        column: 6,
+      },
+      end: {
+        line: 4,
+        column: 8,
+      },
+      originalValue: 'fg',
+      newValue: 'F\nG',
+    };
+
+    const expected = src`
+    $..........$
+    $.A$
+    $B.......$
+    $....C$
+    $D...$
+    $......F$
+    $G..$
+    `;
+
+    const transformations = [t, u, v];
 
     verifyExpected(
       transformations,
