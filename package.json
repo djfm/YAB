@@ -1,0 +1,15 @@
+{
+  "name": "ts-tidy",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "manipulate TypeScript source files to make them better",
+  "main": "src/index.ts",
+  "repository": "git@github.com:djfm/ts-experiments.git",
+  "author": "djfm <fm.de.jouvencel@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@types/node": "^16.0.0",
+    "typescript": "^4.3.5"
+  }
+}
