@@ -283,38 +283,34 @@ const transform = async (
               if (!s.isFile()) {
                 return fail(source, 'expected a file');
               }
+              const quote = raw[0];
+
+              if (!['"', "'", '`'].includes(quote)) {
+                return fail(source, 'unexpected quote type');
+              }
+
+              transformations.push({
+                start,
+                end,
+                originalValue: raw,
+                newValue: [
+                  quote,
+                  importPath,
+                  '.js',
+                  quote,
+                ].join(''),
+                metaData: {
+                  type: 'js-import-extension',
+                },
+              });
             } catch (e) {
               if (e.code !== 'ENOENT') {
                 throw e;
               }
-              return fail(
-                source,
-                'import target is not a file',
-                'guessed target was: ',
-                importTarget,
-              );
+              // well that's OK, sometimes the file
+              // is not there, maybe it hasn't finished
+              // compiling yet
             }
-
-            const quote = raw[0];
-
-            if (!['"', "'", '`'].includes(quote)) {
-              return fail(source, 'unexpected quote type');
-            }
-
-            transformations.push({
-              start,
-              end,
-              originalValue: raw,
-              newValue: [
-                quote,
-                importPath,
-                '.js',
-                quote,
-              ].join(''),
-              metaData: {
-                type: 'js-import-extension',
-              },
-            });
           }
         }
       }
