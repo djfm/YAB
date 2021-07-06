@@ -1,6 +1,7 @@
 import {
   stat,
   readFile,
+  writeFile,
 } from 'fs/promises';
 
 import path from 'path';
@@ -120,10 +121,17 @@ const bail = (errMessage: string, exitCode = 1): never => {
   process.exit(exitCode);
 };
 
-const fail = (node: BT.Node, msg = '') => {
-  const additional = msg ? ` - ${msg}` : '';
+const fail = (node: BT.Node, ...msgParts: string[]) => {
+  const msgLines = msgParts.length === 0 ? [
+    'An unspecified error occurred.',
+  ] : msgParts;
+
+  msgLines.push(
+    `Nearest related AST Node has type ${node.type}.`,
+  );
+
   throw new Error(
-    `Failed on node with type ${node.type}${additional}`,
+    msgParts.join('\n'),
   );
 };
 
@@ -132,8 +140,8 @@ type SourceInfo = {
 }
 
 const knownExtensions = [
-  '.js', '.jsx', '.ts', '.tsx',
-  '.cjs', '.mjs',
+  'js', 'jsx', 'ts', 'tsx',
+  'cjs', 'mjs',
 ];
 
 const hasKnownExtension = (str: string): boolean => {
@@ -238,34 +246,38 @@ const transform = async (
             try {
               // eslint-disable-next-line no-await-in-loop
               const s = await stat(importTarget);
-
               if (!s.isFile()) {
                 return fail(source, 'expected a file');
               }
-
-              const quote = raw[0];
-
-              if (!['"', "'", '`'].includes(quote)) {
-                return fail(source, 'unexpected quote type');
-              }
-
-              transformations.push({
-                start,
-                end,
-                originalValue: raw,
-                newValue: [
-                  quote,
-                  importPath,
-                  '.js',
-                  quote,
-                ].join(''),
-              });
             } catch (e) {
               if (e.code !== 'ENOENT') {
                 throw e;
               }
-              return fail(source, 'import target is not a file');
+              return fail(
+                source,
+                'import target is not a file',
+                'guessed target was: ',
+                importTarget,
+              );
             }
+
+            const quote = raw[0];
+
+            if (!['"', "'", '`'].includes(quote)) {
+              return fail(source, 'unexpected quote type');
+            }
+
+            transformations.push({
+              start,
+              end,
+              originalValue: raw,
+              newValue: [
+                quote,
+                importPath,
+                '.js',
+                quote,
+              ].join(''),
+            });
           }
         }
       }
@@ -547,66 +559,97 @@ export const applyTransformations = (
   return result.sourceLines.join('\n');
 };
 
+type ProcessFileOptions = {
+  assumePathAndTypeValid?: boolean
+}
+
 const processFile = async (
   filePath: string,
+  options?: ProcessFileOptions,
 ): Promise<number> => {
-  try {
-    const s = await stat(filePath);
-    if (!s.isFile()) {
-      bail('Path does not point to a file.');
+  if (!options?.assumePathAndTypeValid) {
+    try {
+      const s = await stat(filePath);
+      if (!s.isFile()) {
+        bail('Path does not point to a file.');
+      }
+    } catch (e) {
+      if (e.code !== 'ENOENT') {
+        bail(`Unexpected error ${e.code}`);
+      }
+      bail('File does not exist.');
     }
-  } catch (e) {
-    if (e.code !== 'ENOENT') {
-      bail(`Unexpected error ${e.code}`);
-    }
-    bail('File does not exist.');
   }
 
   const buffer = await readFile(filePath);
-
   const sourceCode = buffer.toString();
 
   const [transformations, metaData] = await transform(sourceCode, {
     filePath,
   });
 
-  const transformedSource = applyTransformations(
-    transformations,
-    sourceCode,
-  );
+  const nt = transformations.length;
 
-  console.log(JSON.stringify(
-    { transformations, transformedSource, metaData },
-    null,
-    2,
-  ));
+  if (nt > 0) {
+    const transformedSource = applyTransformations(
+      transformations,
+      sourceCode,
+    );
 
-  return transformations.length;
+    await writeFile(filePath, transformedSource);
+
+    log.info(
+      `${nt} transformations performed in "${filePath}"`,
+    );
+  }
+
+  return nt;
 };
 
-const startWatching = (dirPath: string): void => {
+const isPathBlacklisted = (filePath: string): boolean => {
+  if (/\bnode_modules\b/.test(filePath)) {
+    return true;
+  }
+
+  return false;
+};
+
+const startWatching = async (dirPath: string): Promise<void> => {
+  try {
+    const s = await stat(dirPath);
+    if (!s.isDirectory()) {
+      bail('Path does not point to a directory.');
+    }
+  } catch (e) {
+    if (e.code !== 'ENOENT') {
+      bail(`Unexpected error ${e.code}`);
+    }
+    bail('Directory does not exist.');
+  }
+
   log.info(`starting to watch directory ${dirPath}`);
+
+  chokidar.watch(dirPath).on('all', (event, eventPath) => {
+    console.log(event, eventPath);
+
+    if (event === 'add' || event === 'change') {
+      if (
+        eventPath.endsWith('.js')
+          && !isPathBlacklisted(eventPath)
+      ) {
+        processFile(eventPath, {
+          assumePathAndTypeValid: true,
+        });
+      }
+    }
+  });
 };
 
 if (process.env.YAB_RUN) {
   if (process.env.YAB_RUN === 'watch') {
-    try {
-      const s = await stat(inputPathArgument);
-      if (!s.isDirectory()) {
-        bail('Path does not point to a directory.');
-      }
-    } catch (e) {
-      if (e.code !== 'ENOENT') {
-        bail(`Unexpected error ${e.code}`);
-      }
-      bail('Directory does not exist.');
-    }
     startWatching(inputPathArgument);
   } else {
-    processFile(inputPathArgument).then(
-      console.log,
-      console.log,
-    );
+    processFile(inputPathArgument);
   }
 }
 
