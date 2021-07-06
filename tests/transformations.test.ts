@@ -141,6 +141,55 @@ describe('applying transformations', () => {
     expect(transformedSource).toBe(expected);
   });
 
+  test('two transformations on the same line', () => {
+    const source = src`
+    $          $
+    $ ab   cd  $
+    $          $
+    $          $
+    `;
+
+    const t: Transformation = {
+      start: {
+        line: 2,
+        column: 1,
+      },
+      end: {
+        line: 2,
+        column: 3,
+      },
+      originalValue: 'ab',
+      newValue: 'AB',
+    };
+
+    const u: Transformation = {
+      start: {
+        line: 2,
+        column: 6,
+      },
+      end: {
+        line: 2,
+        column: 8,
+      },
+      originalValue: 'cd',
+      newValue: 'CD',
+    };
+
+    const expected = src`
+    $          $
+    $ AB   CD  $
+    $          $
+    $          $
+    `;
+
+    const transformedSource = applyTransformations(
+      [t, u],
+      source,
+    );
+
+    expect(transformedSource).toBe(expected);
+  });
+
   test('an invalid transformation throws', () => {
     const source = src`
     $          $

@@ -126,66 +126,47 @@ const transform = async (sourceCode, info) => {
     return [transformations, metaData];
 };
 const [inputFilePath] = minimist(process.argv.slice(2))._;
-const applySingleTransformation = (transformation, sourceLines, location) => {
-    if (transformation.start.line < location.line) {
-        throw new Error('transformation cannot be applied - started before');
-    }
-    if (location.line + sourceLines.length
-        < transformation.start.line) {
+// TODO this method **WILL NOT** work
+// for transformations either spanning
+// several source lines,
+// or replacing one line with several lines
+const applySingleTransformation = (transformation, sourceLines, convertToTransformed) => {
+    const convertedStart = convertToTransformed(transformation.start);
+    const convertedEnd = convertToTransformed(transformation.end);
+    if (sourceLines.length < convertedStart.line) {
         throw new Error('transformation cannot be applied - not enough input lines');
     }
-    const offsetStartLine = transformation.start.line
-        - location.line;
-    const linesBefore = sourceLines.slice(0, offsetStartLine);
-    const linesAfter = sourceLines.slice(offsetStartLine + 1);
-    const lineToModify = sourceLines[offsetStartLine];
-    const leftOfSource = lineToModify.slice(0, transformation.start.column);
-    const source = lineToModify.slice(transformation.start.column, transformation.end.column);
+    const linesBefore = sourceLines.slice(0, convertedStart.line - 1);
+    const linesAfter = sourceLines.slice(convertedEnd.line);
+    const lineToModify = sourceLines[convertedStart.line - 1];
+    const leftOfSource = lineToModify.slice(0, convertedStart.column);
+    const source = lineToModify.slice(convertedStart.column, convertedEnd.column);
+    const rightOfSource = lineToModify.slice(convertedEnd.column);
     if (source !== transformation.originalValue) {
         throw new Error(`did not find expected source string - got "${source}" instead of ${transformation.originalValue}`);
     }
-    const rightOfSource = lineToModify.slice(transformation.end.column);
     const newModifiedLine = [
         leftOfSource,
         transformation.newValue,
         rightOfSource,
     ].join('');
+    const newSourceLines = linesBefore.concat(newModifiedLine, linesAfter);
+    // TODO won't work in a ton of cases,
+    // this is just a proof of concept and
+    // a draft
+    const newConverter = (loc) => loc;
     return {
-        processedSourceLines: linesBefore.concat(newModifiedLine),
-        remainingSourceLines: linesAfter,
-        locationInSource: {
-            line: location.line + linesBefore.length + 1,
-            column: 0,
-        },
+        sourceLines: newSourceLines,
+        convertToTransformed: newConverter,
     };
 };
-const recursivelyApplyTransformations = (transformations, sourceLines, location) => {
+const recursivelyApplyTransformations = (transformations, previousResult) => {
     if (transformations.length === 0) {
-        return {
-            processedSourceLines: [],
-            remainingSourceLines: [],
-            locationInSource: location,
-        };
+        return previousResult;
     }
     const [t, ...remainingTransformations] = transformations;
-    const tResult = applySingleTransformation(t, sourceLines, location);
-    if (remainingTransformations.length === 0) {
-        const processedSourceLines = tResult
-            .processedSourceLines.concat(tResult.remainingSourceLines);
-        return {
-            processedSourceLines,
-            remainingSourceLines: [],
-            locationInSource: {
-                line: processedSourceLines.length + 1,
-                column: processedSourceLines[processedSourceLines.length - 1].length,
-            },
-        };
-    }
-    const restResult = recursivelyApplyTransformations(remainingTransformations, tResult.remainingSourceLines, tResult.locationInSource);
-    return {
-        ...restResult,
-        processedSourceLines: tResult.processedSourceLines.concat(restResult.processedSourceLines),
-    };
+    const newResult = applySingleTransformation(t, previousResult.sourceLines, previousResult.convertToTransformed);
+    return recursivelyApplyTransformations(remainingTransformations, newResult);
 };
 /**
  * Checks whether there are overlapping transformations
@@ -246,12 +227,12 @@ export const applyTransformations = (unorderedTransformations, sourceCode) => {
         throw new Error('overlapping transformations cannot be applied');
     }
     const sourceLines = sourceCode.split('\n');
-    const location = {
-        line: 1,
-        column: 0,
+    const initialState = {
+        sourceLines,
+        convertToTransformed: (loc) => loc,
     };
-    const result = recursivelyApplyTransformations(transformations, sourceLines, location);
-    return result.processedSourceLines.join('\n');
+    const result = recursivelyApplyTransformations(transformations, initialState);
+    return result.sourceLines.join('\n');
 };
 const processFile = async (filePath) => {
     try {

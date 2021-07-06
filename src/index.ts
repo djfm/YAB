@@ -287,72 +287,7 @@ const applySingleTransformation = (
   // TODO won't work in a ton of cases,
   // this is just a proof of concept and
   // a draft
-  const newConverter = (loc: Location) => {
-    if (
-      loc.line < transformation.start.line
-        || (
-          loc.line === transformation.end.line
-            && loc.column < transformation.start.column
-        )
-    ) {
-      /**
-       * the following diagram illustrates this case
-       * - X is what we have not touched
-       * - the dots mark what we have replaced
-       * - the Y's mark what we have not touched,
-       *   but comes after our changes in the document
-       *
-       * XXXX
-       * XXXX
-       * X...
-       * ..YY
-       * YYYY
-       *
-       * so when we are asked for coordinates in X,
-       * the old converter is still valid
-       */
-      return convertToTransformed(loc);
-    }
-
-    if (
-      loc.line > transformation.end.line
-        || (
-          loc.line === transformation.end.line
-            && loc.column >= transformation.start.column
-        )
-    ) {
-      /**
-       * We are in the Y part of the above diagram.
-       */
-
-      const initialLoc = convertToTransformed(loc);
-
-      if (loc.line === transformation.end.line) {
-        return {
-          line: initialLoc.line,
-          column: initialLoc.column
-            - leftOfSource.length
-            + transformation.newValue.length,
-        };
-      }
-
-      // now the only case the remains is
-      // loc.line > transformation.end.line
-
-      const line = initialLoc.line
-        // minus lines removed - this is wrong,
-        // I'm thinking as I write
-        - (transformation.end.line - transformation.start.line + 1)
-        // plus the lines added
-        + (newSourceLines.length - sourceLines.length);
-      return {
-        line,
-        column: initialLoc.column,
-      };
-    }
-
-    throw new Error('looks like an overlap');
-  };
+  const newConverter = (loc: Location) => loc;
 
   return {
     sourceLines: newSourceLines,
