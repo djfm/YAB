@@ -141,6 +141,33 @@ describe('applying transformations', () => {
     expect(transformedSource).toBe(expected);
   });
 
+  test('an invalid transformation throws', () => {
+    const source = src`
+    $          $
+    $    abc   $
+    $          $
+    $          $
+    $          $
+    `;
+
+    const t: Transformation = {
+      start: {
+        line: 2,
+        column: 4,
+      },
+      end: {
+        line: 2,
+        column: 7,
+      },
+      originalValue: 'ab',
+      newValue: 'xy',
+    };
+
+    expect(() => applyTransformations(
+      [t], source,
+    )).toThrow('did not find expected source string')
+  });
+
   test([
     'that an error is thrown if there are',
     'two overlapping transformations',
