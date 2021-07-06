@@ -27,7 +27,11 @@ const src = (str: TemplateStringsArray): string =>
     .join('')
     .trim()
     .split('\n')
-    .map((line) => line.trim().slice(1, -1))
+    .map(
+      (line) => line
+        .trim()
+        .slice(1, -1),
+    )
     .join('\n');
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -60,11 +64,11 @@ describe('sorting transformations in increasing order', () => {
 describe('applying transformations', () => {
   test('a single valid transformation', () => {
     const source = src`
-    $          $
-    $    abc   $
-    $          $
-    $          $
-    $          $
+    $..........$
+    $....abc...$
+    $..........$
+    $..........$
+    $..........$
     `;
 
     const t: Transformation = {
@@ -81,11 +85,11 @@ describe('applying transformations', () => {
     };
 
     const expected = src`
-    $          $
-    $    xy   $
-    $          $
-    $          $
-    $          $
+    $..........$
+    $....xy...$
+    $..........$
+    $..........$
+    $..........$
     `;
 
     const transformedSource = applyTransformations(
@@ -98,11 +102,11 @@ describe('applying transformations', () => {
 
   test('two valid transformations', () => {
     const source = src`
-    $          $
-    $    abc   $
-    $          $
-    $def       $
-    $          $
+    $..........$
+    $....abc...$
+    $..........$
+    $def.......$
+    $..........$
     `;
 
     const t: Transformation = {
@@ -132,11 +136,11 @@ describe('applying transformations', () => {
     };
 
     const expected = src`
-    $          $
-    $    xy   $
-    $          $
-    $poulpe       $
-    $          $
+    $..........$
+    $....xy...$
+    $..........$
+    $poulpe.......$
+    $..........$
     `;
 
     const transformedSource = applyTransformations(
@@ -149,10 +153,10 @@ describe('applying transformations', () => {
 
   test('two transformations on the same line', () => {
     const source = src`
-    $          $
-    $ ab   cd  $
-    $          $
-    $          $
+    $..........$
+    $.ab...cd..$
+    $..........$
+    $..........$
     `;
 
     const t: Transformation = {
@@ -182,10 +186,10 @@ describe('applying transformations', () => {
     };
 
     const expected = src`
-    $          $
-    $ AB   CD  $
-    $          $
-    $          $
+    $..........$
+    $.AB...CD..$
+    $..........$
+    $..........$
     `;
 
     const transformedSource = applyTransformations(
@@ -202,10 +206,10 @@ describe('applying transformations', () => {
     '- most simple of such scenarios',
   ].join(' '), () => {
     const source = src`
-    $          $
-    $ ab       $
-    $          $
-    $      cd  $
+    $..........$
+    $.ab.......$
+    $..........$
+    $......cd..$
     `;
 
     const t: Transformation = {
@@ -241,11 +245,11 @@ describe('applying transformations', () => {
     };
 
     const expected = src`
-    $          $
-    $ A$
-    $B       $
-    $          $
-    $      CD  $
+    $..........$
+    $.A$
+    $B.......$
+    $..........$
+    $......CD..$
     `;
 
     const transformedSource = applyTransformations(
@@ -258,11 +262,10 @@ describe('applying transformations', () => {
 
   test('an invalid transformation throws', () => {
     const source = src`
-    $          $
-    $    abc   $
-    $          $
-    $          $
-    $          $
+    $..........$
+    $....abc...$
+    $..........$
+    $..........$
     `;
 
     const t: Transformation = {
@@ -280,7 +283,7 @@ describe('applying transformations', () => {
 
     expect(() => applyTransformations(
       [t], source,
-    )).toThrow('did not find expected source string')
+    )).toThrow('did not find expected source string');
   });
 
   test([
