@@ -6,12 +6,19 @@ import {
 
 import path from 'path';
 
+import { URL } from 'url';
+
 import minimist from 'minimist';
 
 import babelParser from '@babel/parser';
 import BT from '@babel/types';
 
 import chokidar from 'chokidar';
+
+const metaURLString = import.meta.url;
+const {
+  pathname: thisScriptPathname,
+} = new URL(metaURLString);
 
 type voidReturningFunction = (
   ...args: unknown[]
@@ -725,6 +732,10 @@ const startWatching = async (dirPath: string): Promise<void> => {
         processFile(eventPath, {
           assumePathAndTypeValid: true,
         });
+
+        if (path.resolve(eventPath) === thisScriptPathname) {
+          log.info('[YAB is watching its own transpilation directory]');
+        }
       }
     }
   });
