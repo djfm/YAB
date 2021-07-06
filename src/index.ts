@@ -225,9 +225,6 @@ const applySingleTransformation = (
   sourceLines: string[],
   convertToTransformed: OriginalToTransformedConverter,
 ): TransformationResult => {
-  if (transformation?.metaData?.t || transformation?.metaData?.t) {
-    debugger;
-  }
   const convertedStart = convertToTransformed(
     transformation.start,
   );
@@ -312,8 +309,6 @@ const applySingleTransformation = (
       }`,
     );
   }
-
-  const newValueLines = transformation.newValue.split('\n');
 
   const newModifiedLines = [
     // the part of the first affected line that
