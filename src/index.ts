@@ -641,7 +641,11 @@ const processFile = async (
     );
 
     log.info([
-      `performed ${nt} transformations in "${filePath}":`,
+      `performed ${
+        nt
+      } transformation${
+        nt !== 1 ? 's' : ''
+      } in "${filePath}":`,
       ...details,
       '',
     ].join('\n'));
