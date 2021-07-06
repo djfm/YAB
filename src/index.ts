@@ -277,6 +277,9 @@ const transform = async (
                 '.js',
                 quote,
               ].join(''),
+              metaData: {
+                type: 'js-import-extension',
+              },
             });
           }
         }
@@ -600,7 +603,11 @@ const processFile = async (
 
     const details = transformations.map(
       (t: Transformation) =>
-        `    ${t.originalValue} => ${t.newValue}`,
+        `    ${
+          t?.metaData?.type
+        } ${
+          t.originalValue
+        } => ${t.newValue}`,
     );
 
     log.info([
