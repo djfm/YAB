@@ -100,6 +100,9 @@ import { FileMetaData } from './transformFile';
  *    algorithm describing how to map the package sub-path to an actual
  *    file.
  *
+ *    Thankfully Webpack describes it in an easy to understand way:
+ *    https://webpack.js.org/guides/package-exports/
+ *
  *    If there is no "exports" key in the 'package.json', then the module
  *    is resolved using the standard URL resolution algorithm with
  *    the sub-path as URL and the package's folder as the current directory.
