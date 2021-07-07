@@ -1,6 +1,6 @@
 import path from 'path';
 import { readFile, } from 'fs/promises';
-import { hasOwnProperty, statOrUndefined, } from './util.js';
+import { hasOwnProperty, statOrUndefined, } from './util';
 /**
  * Node's resolution algorithm for "import" statements is
  * described here: https://nodejs.org/api/esm.html#esm_resolution_algorithm
@@ -156,7 +156,9 @@ export const shouldAppendJsExtension = async (importingFilePathname, importSpeci
     if (!importingFilePathname.endsWith('.js')) {
         return false;
     }
-    if (importSpecifier.includes('.')) {
+    const importSpecifierParts = importSpecifier.split('/');
+    if (importSpecifierParts[importSpecifierParts.length - 1]
+        .includes('.')) {
         // there may be an extension specified,
         // so we won't touch the import
         return false;
@@ -183,7 +185,7 @@ export const shouldAppendJsExtension = async (importingFilePathname, importSpeci
             // has a chance to work **if** the target module
             // has an "exports" key in its 'package.json'
             // that has an entry for our importSpecifier's sub-path.
-            const [packageName, ...subPathParts] = importSpecifier.split('/');
+            const [packageName, ...subPathParts] = importSpecifierParts;
             const subPath = ['.', ...subPathParts].join('/');
             // eslint-disable-next-line no-await-in-loop
             const packageDirectory = await findPackageDirectory(importingFileDirectory, packageName);

@@ -192,7 +192,12 @@ export const shouldAppendJsExtension = async (
     return false;
   }
 
-  if (importSpecifier.includes('.')) {
+  const importSpecifierParts = importSpecifier.split('/');
+
+  if (
+    importSpecifierParts[importSpecifierParts.length - 1]
+      .includes('.')
+  ) {
     // there may be an extension specified,
     // so we won't touch the import
     return false;
@@ -231,7 +236,7 @@ export const shouldAppendJsExtension = async (
       // has an "exports" key in its 'package.json'
       // that has an entry for our importSpecifier's sub-path.
 
-      const [packageName, ...subPathParts] = importSpecifier.split('/');
+      const [packageName, ...subPathParts] = importSpecifierParts;
 
       const subPath = ['.', ...subPathParts].join('/');
 

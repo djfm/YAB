@@ -25,6 +25,7 @@ const makeScenario = (
 const testData: Scenario[] = [
   makeScenario('topLevel.js', 'fs/promises', false),
   makeScenario('topLevel.js', 'colors/safe', true),
+  makeScenario('topLevel.js', './mod', true),
 ];
 
 describe([
@@ -35,7 +36,7 @@ describe([
     "add '.js' to «import foo from '$specifier';» in file '$file'? $append",
     async ({ file, specifier, append }) => {
       const importingFilePath = path.resolve(
-        'fixtures', file,
+        'tests', 'fixtures', file,
       );
 
       const actual = await shouldAppendJsExtension(

@@ -1,5 +1,5 @@
 import babelParser from '@babel/parser';
-import addJsExtension from './appendJsExtension.js';
+import addJsExtension from './appendJsExtension';
 export const transformFile = async (sourceCode, sourceFileMetaData) => {
     const AST = babelParser.parse(sourceCode, {
         sourceType: 'module',
