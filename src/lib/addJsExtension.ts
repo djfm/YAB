@@ -87,8 +87,11 @@ export const addJsExtension = async (
         return fail(source, '"extra.raw" is not a string');
       }
 
-      if (importPath.startsWith('./') || importPath.startsWith('/')) {
-        // relative imports
+      // TODO handle 'file:///' specifiers
+      if (importPath.startsWith('./') || path.isAbsolute(importPath)) {
+        // relative imports - yes I know a path starting with '/'
+        // is actually absolute, but they are treated the same by Node's
+        // resolution algorithm
 
         if (metaData.pathname.endsWith('.js')) {
           if (!hasKnownExtension(importPath)) {
@@ -96,10 +99,12 @@ export const addJsExtension = async (
               metaData.pathname,
             );
 
-            const targetWithoutExt = path.join(
-              importedFromDir,
-              importPath,
-            );
+            const targetWithoutExt = path.isAbsolute(importPath)
+              ? importPath
+              : path.join(
+                  importedFromDir,
+                  importPath,
+                );
 
             const importTarget = `${targetWithoutExt}.js`;
 
