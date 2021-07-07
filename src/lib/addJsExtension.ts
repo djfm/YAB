@@ -212,9 +212,9 @@ export const addJsExtension = async (
             const targetWithoutExt = path.isAbsolute(importPath)
               ? importPath
               : path.join(
-                  importedFromDir,
-                  importPath,
-                );
+                importedFromDir,
+                importPath,
+              );
 
             const importTarget = `${targetWithoutExt}.js`;
 
