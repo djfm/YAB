@@ -12,15 +12,20 @@ type Scenario = {
   append: boolean
 }
 
-const testData: Scenario[] = [{
-  file: 'topLevel.js',
-  specifier: 'fs/promises',
-  append: false,
-}, {
-  file: 'topLevel.js',
-  specifier: 'colors/safe',
-  append: true,
-}];
+const makeScenario = (
+  file: string,
+  specifier: string,
+  append: boolean,
+): Scenario => ({
+  file,
+  specifier,
+  append,
+});
+
+const testData: Scenario[] = [
+  makeScenario('topLevel.js', 'fs/promises', false),
+  makeScenario('topLevel.js', 'colors/safe', true),
+];
 
 describe([
   'the "shouldAppendJsExtension" determines whether or not',
