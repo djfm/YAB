@@ -87,7 +87,9 @@ export const addJsExtension = async (
         return fail(source, '"extra.raw" is not a string');
       }
 
-      if (importPath.startsWith('./')) {
+      if (importPath.startsWith('./') || importPath.startsWith('/')) {
+        // relative imports
+
         if (metaData.pathname.endsWith('.js')) {
           if (!hasKnownExtension(importPath)) {
             const importedFromDir = path.dirname(
