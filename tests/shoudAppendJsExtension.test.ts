@@ -23,9 +23,10 @@ const makeScenario = (
 });
 
 const testData: Scenario[] = [
-  makeScenario('topLevel.js', 'fs/promises', false),
-  makeScenario('topLevel.js', 'colors/safe', true),
-  makeScenario('topLevel.js', './mod', true),
+  makeScenario('importingFile.js', 'fs/promises', false),
+  makeScenario('importingFile.js', 'colors/safe', true),
+  makeScenario('importingFile.js', './mod', true),
+  makeScenario('importingFile.js', './mod.js', false),
 ];
 
 describe([
