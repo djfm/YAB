@@ -1,3 +1,4 @@
+import { stat } from 'fs/promises';
 // eslint-disable-next-line import/prefer-default-export
 export const postpone = (nMilliseconds) => (fn) => {
     let lastCallTime = Date.now();
@@ -20,4 +21,17 @@ export const postpone = (nMilliseconds) => (fn) => {
     };
     return wrappedFn;
 };
+export const statOrUndefined = async (pathname) => {
+    try {
+        const s = await stat(pathname);
+        return s;
+    }
+    catch (e) {
+        if (e.code !== 'ENOENT') {
+            throw e;
+        }
+        return undefined;
+    }
+};
+export const hasOwnProperty = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop);
 //# sourceMappingURL=util.js.map

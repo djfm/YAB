@@ -1,10 +1,16 @@
 import path from 'path';
-import { stat } from 'fs/promises';
+import {
+  readFile,
+} from 'fs/promises';
 
 import BT from '@babel/types';
 
 import { Transformation } from './transformation';
 import { FileMetaData } from './transformFile';
+import {
+  hasOwnProperty,
+  statOrUndefined,
+} from './util';
 
 /**
  * Node's resolution algorithm for "import" statements is
@@ -116,17 +122,161 @@ import { FileMetaData } from './transformFile';
  *    needs to append a ".js" in this case too.
  */
 
-const knownExtensions = [
-  'js', 'jsx', 'ts', 'tsx',
-  'cjs', 'mjs',
-];
+const findPackageDirectory = async (
+  directoryOfImportingFile: string,
+  packageName: string,
+): Promise<string | undefined> => {
+  const candidate = path.join(
+    directoryOfImportingFile,
+    'node_modules',
+    packageName,
+  );
 
-const hasKnownExtension = (str: string): boolean => {
-  for (const ext of knownExtensions) {
-    if (str.endsWith(`.${ext}`)) {
-      return true;
+  const s = await statOrUndefined(candidate);
+  if (s) {
+    return candidate;
+  }
+
+  const parent = path.dirname(directoryOfImportingFile);
+
+  if (parent === directoryOfImportingFile) {
+    // we've reached the root of the filesystem
+    return undefined;
+  }
+
+  return findPackageDirectory(parent, packageName);
+};
+
+const loadPackageDotJSON = async (
+  packageDirectory: string,
+): Promise<
+  Record<string, unknown>
+  | 'invalid'
+  | undefined
+> => {
+  try {
+    const buffer = await readFile(path.join(
+      packageDirectory,
+      'package.json',
+    ));
+    const jsonSource = buffer.toString();
+    try {
+      return JSON.parse(jsonSource);
+    } catch (e) {
+      return 'invalid';
+    }
+  } catch (e) {
+    return undefined;
+  }
+};
+
+/**
+ * Determines if we should append the ".js" extension
+ * to a given "import" statement.
+ *
+ * The guiding principle is to only do it when we are sure
+ * that the JS source code wouldn't work otherwise,
+ * and that our replacement is valid.
+ *
+ * @param importingFilePathname is the file in which the
+ *                              "import" statement was found
+ *
+ * @param importSpecifier       is what that "import" statement
+ *                              is trying to import
+ */
+export const shouldAppendJsExtension = async (
+  importingFilePathname: string,
+  importSpecifier: string,
+): Promise<boolean> => {
+  if (!importingFilePathname.endsWith('.js')) {
+    return false;
+  }
+
+  if (importSpecifier.includes('.')) {
+    // there may be an extension specified,
+    // so we won't touch the import
+    return false;
+  }
+
+  const importingFileDirectory = path.dirname(
+    importingFilePathname,
+  );
+
+  // TODO handle 'file:///' specifiers
+  if (importSpecifier.startsWith('./') || path.isAbsolute(importSpecifier)) {
+    // relative imports - yes I know a path starting with '/'
+    // is actually absolute, but they are treated the same by Node's
+    // resolution algorithm
+    const resolvedSpecifierWithoutExt = path.isAbsolute(
+      importSpecifier,
+    ) ? importSpecifier
+      : path.join(
+        importingFileDirectory,
+        importSpecifier,
+      );
+
+    const resolvedSpecifierPathname = `${resolvedSpecifierWithoutExt}.js`;
+    const specifierStat = await statOrUndefined(
+      resolvedSpecifierPathname,
+    );
+    if (specifierStat !== undefined) {
+      return specifierStat.isFile();
+    }
+  } else if (/^\w/.test(importSpecifier)) {
+    if (importSpecifier.includes('/')) {
+      // we are importing a sub-path, so this
+      // is more or less the same case as above,
+      // except that the original import statement
+      // has a chance to work **if** the target module
+      // has an "exports" key in its 'package.json'
+      // that has an entry for our importSpecifier's sub-path.
+
+      const [packageName, ...subPathParts] = importSpecifier.split('/');
+
+      const subPath = ['.', ...subPathParts].join('/');
+
+      // eslint-disable-next-line no-await-in-loop
+      const packageDirectory = await findPackageDirectory(
+        importingFileDirectory,
+        packageName,
+      );
+
+      if (!packageDirectory) {
+        return false;
+      }
+
+      const pjson = await loadPackageDotJSON(
+        packageDirectory,
+      );
+
+      if (pjson === 'invalid' || pjson === undefined) {
+        return false;
+      }
+
+      if (
+        hasOwnProperty(pjson, 'exports')
+          && hasOwnProperty(pjson.exports, subPath)
+      ) {
+        // there is a mapping defined for the specifier,
+        // the ESM algorithm should be able to do
+        // is job
+        return false;
+      }
+
+      const resolvedSpecifierPathname = `${path.join(
+        packageDirectory,
+        subPath,
+      )}.js`;
+
+      const specifierStat = await statOrUndefined(
+        resolvedSpecifierPathname,
+      );
+      if (specifierStat !== undefined) {
+        return specifierStat.isFile();
+      }
     }
   }
+
   return false;
 };
 
@@ -197,63 +347,33 @@ export const addJsExtension = async (
         return fail(source, '"extra.raw" is not a string');
       }
 
-      // TODO handle 'file:///' specifiers
-      if (specifier.startsWith('./') || path.isAbsolute(specifier)) {
-        // relative imports - yes I know a path starting with '/'
-        // is actually absolute, but they are treated the same by Node's
-        // resolution algorithm
+      const quote = raw[0];
 
-        if (metaData.pathname.endsWith('.js')) {
-          if (!hasKnownExtension(specifier)) {
-            const importedFromDir = path.dirname(
-              metaData.pathname,
-            );
+      if (!['"', "'", '`'].includes(quote)) {
+        fail(source, 'unexpected quote type');
+      }
 
-            const targetWithoutExt = path.isAbsolute(specifier)
-              ? specifier
-              : path.join(
-                importedFromDir,
-                specifier,
-              );
+      // eslint-disable-next-line no-await-in-loop
+      const shouldAppendExt = await shouldAppendJsExtension(
+        metaData.pathname,
+        specifier,
+      );
 
-            const importTarget = `${targetWithoutExt}.js`;
-
-            try {
-              // eslint-disable-next-line no-await-in-loop
-              const s = await stat(importTarget);
-              if (!s.isFile()) {
-                return fail(source, 'expected a file');
-              }
-              const quote = raw[0];
-
-              if (!['"', "'", '`'].includes(quote)) {
-                fail(source, 'unexpected quote type');
-              }
-
-              transformations.push({
-                start,
-                end,
-                originalValue: raw,
-                newValue: [
-                  quote,
-                  specifier,
-                  '.js',
-                  quote,
-                ].join(''),
-                metaData: {
-                  type: 'js-import-extension',
-                },
-              });
-            } catch (e) {
-              if (e.code !== 'ENOENT') {
-                throw e;
-              }
-              // well that's OK, sometimes the file
-              // is not there, maybe it hasn't finished
-              // compiling yet
-            }
-          }
-        }
+      if (shouldAppendExt) {
+        transformations.push({
+          start,
+          end,
+          originalValue: raw,
+          newValue: [
+            quote,
+            specifier,
+            '.js',
+            quote,
+          ].join(''),
+          metaData: {
+            type: 'js-import-extension',
+          },
+        });
       }
     }
   }

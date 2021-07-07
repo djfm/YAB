@@ -801,6 +801,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/colors@npm:^1.2.1":
+  version: 1.2.1
+  resolution: "@types/colors@npm:1.2.1"
+  dependencies:
+    colors: "*"
+  checksum: a2fb92353cbc11d44813b71bb83f20d8d656f3e37c00cebc5a4dbbd48cee15bc2fdb6332434d7a42358ae62f0379a1fc920114c5e18872244d20ab1f4ee01340
+  languageName: node
+  linkType: hard
+
 "@types/graceful-fs@npm:^4.1.2":
   version: 4.1.5
   resolution: "@types/graceful-fs@npm:4.1.5"
@@ -1629,6 +1638,13 @@ __metadata:
   version: 1.2.2
   resolution: "colorette@npm:1.2.2"
   checksum: e240f0c94b8d9f34b52bd17b50fc13a3b74f9e662edeaa2b0c65e06ec6b1fc6367fb42b834ec5a1d819d68b74a3d850f3bd3e284f9e614d6c4ffa122f83c6ec5
+  languageName: node
+  linkType: hard
+
+"colors@npm:*, colors@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "colors@npm:1.4.0"
+  checksum: a0f266ac041a9774d92cc9624a984707678d2eeec125d54e8d8231075ce36c24c5352fb5d0f90c6ee420d0f63e354417cec716386ad341309334aad18e32b933
   languageName: node
   linkType: hard
 
@@ -5489,12 +5505,14 @@ typescript@^4.3.5:
     "@babel/parser": ^7.14.7
     "@babel/types": ^7.14.5
     "@types/chokidar": ^2.1.3
+    "@types/colors": ^1.2.1
     "@types/jest": ^26.0.23
     "@types/minimist": ^1.2.1
     "@types/node": ^16.0.0
     "@typescript-eslint/eslint-plugin": latest
     "@typescript-eslint/parser": latest
     chokidar: ^3.5.2
+    colors: ^1.4.0
     eslint: ^7.30.0
     eslint-config-airbnb-base: latest
     eslint-plugin-import: ^2.23.4

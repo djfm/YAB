@@ -1,6 +1,6 @@
 import babelParser from '@babel/parser';
 
-import addJsExtension from './addJsExtension';
+import addJsExtension from './appendJsExtension';
 import { Transformation } from './transformation';
 
 export type SourceInfo = {
