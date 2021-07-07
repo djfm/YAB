@@ -185,7 +185,7 @@ export const addJsExtension = async (
       const { start, end } = source.loc;
 
       const {
-        value: importPath,
+        value: specifier,
         extra: { raw },
       } = source;
 
@@ -198,22 +198,22 @@ export const addJsExtension = async (
       }
 
       // TODO handle 'file:///' specifiers
-      if (importPath.startsWith('./') || path.isAbsolute(importPath)) {
+      if (specifier.startsWith('./') || path.isAbsolute(specifier)) {
         // relative imports - yes I know a path starting with '/'
         // is actually absolute, but they are treated the same by Node's
         // resolution algorithm
 
         if (metaData.pathname.endsWith('.js')) {
-          if (!hasKnownExtension(importPath)) {
+          if (!hasKnownExtension(specifier)) {
             const importedFromDir = path.dirname(
               metaData.pathname,
             );
 
-            const targetWithoutExt = path.isAbsolute(importPath)
-              ? importPath
+            const targetWithoutExt = path.isAbsolute(specifier)
+              ? specifier
               : path.join(
                 importedFromDir,
-                importPath,
+                specifier,
               );
 
             const importTarget = `${targetWithoutExt}.js`;
@@ -236,7 +236,7 @@ export const addJsExtension = async (
                 originalValue: raw,
                 newValue: [
                   quote,
-                  importPath,
+                  specifier,
                   '.js',
                   quote,
                 ].join(''),
