@@ -145,7 +145,7 @@ const startWatching = async (dirPath: string): Promise<void> => {
     p.endsWith('.js')
     && !isPathBlacklisted(p);
 
-  chokidar.watch(dirPath).on('all', (event, eventPath) => {
+  chokidar.watch(dirPath).on('all', async (event, eventPath) => {
     if (event === 'add') {
       nFiles += 1;
       if (isProcessable(eventPath)) {
@@ -174,9 +174,21 @@ const startWatching = async (dirPath: string): Promise<void> => {
 
     if (event === 'add' || event === 'change') {
       if (isProcessable(eventPath)) {
-        processFile(eventPath, {
-          assumePathAndTypeValid: true,
-        });
+        try {
+          await processFile(eventPath, {
+            assumePathAndTypeValid: true,
+          });
+        } catch (e) {
+          if (e.code === 'BABEL_PARSER_SYNTAX_ERROR') {
+            log.error(
+              `Babel was not able to parse the file "${eventPath}", so it wasn't processed.`,
+              'The error reported by babel was:',
+              e.message,
+            );
+          } else {
+            throw e;
+          }
+        }
 
         if (path.resolve(eventPath) === thisScriptPathname) {
           log.info('[YAB is watching its own transpilation directory]');
