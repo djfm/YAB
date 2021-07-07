@@ -5,7 +5,7 @@ type voidReturningFunction = (
 // eslint-disable-next-line import/prefer-default-export
 export const postpone = (nMilliseconds: number) =>
   (fn: voidReturningFunction): voidReturningFunction => {
-    let lastCallTime = 0;
+    let lastCallTime = Date.now();
     let currentTimeout: ReturnType<typeof setTimeout> | undefined;
 
     const wrappedFn = (...args: unknown[]) => {
