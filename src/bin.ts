@@ -16,9 +16,10 @@ import {
 
 import {
   applyTransformations,
-  transform,
   Transformation,
 } from './lib/transformation';
+
+import transformFile from './lib/transformFile';
 
 import log from './lib/log';
 import usage from './usage';
@@ -48,12 +49,12 @@ if (!inputPathArgument) {
 
 // TODO update the source-maps
 const processFile = async (
-  filePath: string,
+  pathname: string,
   options?: ProcessFileOptions,
 ): Promise<number> => {
   if (!options?.assumePathAndTypeValid) {
     try {
-      const s = await stat(filePath);
+      const s = await stat(pathname);
       if (!s.isFile()) {
         bail('Path does not point to a file.');
       }
@@ -65,11 +66,11 @@ const processFile = async (
     }
   }
 
-  const buffer = await readFile(filePath);
+  const buffer = await readFile(pathname);
   const sourceCode = buffer.toString();
 
-  const [transformations] = await transform(sourceCode, {
-    filePath,
+  const [transformations] = await transformFile(sourceCode, {
+    pathname,
   });
 
   const nt = transformations.length;
@@ -80,7 +81,7 @@ const processFile = async (
       sourceCode,
     );
 
-    await writeFile(filePath, transformedSource);
+    await writeFile(pathname, transformedSource);
 
     const details = transformations.map(
       (t: Transformation) =>
@@ -96,7 +97,7 @@ const processFile = async (
         nt
       } transformation${
         nt !== 1 ? 's' : ''
-      } in "${filePath}":`,
+      } in "${pathname}":`,
       ...details,
     ].join('\n'));
   }

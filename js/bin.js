@@ -4,7 +4,8 @@ import { URL } from 'url';
 import minimist from 'minimist';
 import chokidar from 'chokidar';
 import { postpone, } from './lib/util.js';
-import { applyTransformations, transform, } from './lib/transformation.js';
+import { applyTransformations, } from './lib/transformation.js';
+import transformFile from './lib/transformFile.js';
 import log from './lib/log.js';
 import usage from './usage.js';
 const metaURLString = import.meta.url;
@@ -20,10 +21,10 @@ if (!inputPathArgument) {
     bail('Please provide a path to a directory to watch.');
 }
 // TODO update the source-maps
-const processFile = async (filePath, options) => {
+const processFile = async (pathname, options) => {
     if (!options?.assumePathAndTypeValid) {
         try {
-            const s = await stat(filePath);
+            const s = await stat(pathname);
             if (!s.isFile()) {
                 bail('Path does not point to a file.');
             }
@@ -35,18 +36,18 @@ const processFile = async (filePath, options) => {
             bail('File does not exist.');
         }
     }
-    const buffer = await readFile(filePath);
+    const buffer = await readFile(pathname);
     const sourceCode = buffer.toString();
-    const [transformations] = await transform(sourceCode, {
-        filePath,
+    const [transformations] = await transformFile(sourceCode, {
+        pathname,
     });
     const nt = transformations.length;
     if (nt > 0) {
         const transformedSource = applyTransformations(transformations, sourceCode);
-        await writeFile(filePath, transformedSource);
+        await writeFile(pathname, transformedSource);
         const details = transformations.map((t) => `    ${t?.metaData?.type} ${t.originalValue} => ${t.newValue}`);
         log.info([
-            `performed ${nt} transformation${nt !== 1 ? 's' : ''} in "${filePath}":`,
+            `performed ${nt} transformation${nt !== 1 ? 's' : ''} in "${pathname}":`,
             ...details,
         ].join('\n'));
     }

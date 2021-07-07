@@ -1,6 +1,6 @@
 // eslint-disable-next-line import/prefer-default-export
 export const postpone = (nMilliseconds) => (fn) => {
-    let lastCallTime = 0;
+    let lastCallTime = Date.now();
     let currentTimeout;
     const wrappedFn = (...args) => {
         const tooEarly = () => (Date.now() - lastCallTime) < nMilliseconds;
