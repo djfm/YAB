@@ -9,3 +9,9 @@
 tmp
 
 js/exampleSourceFiles
+
+# I use this file to try out
+# some stuff sometimes
+src/draft.ts
+js/draft.js
+js/draft.js.map
