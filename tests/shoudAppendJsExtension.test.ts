@@ -29,6 +29,10 @@ const testData: Scenario[] = [
   makeScenario('importingFile.js', './mod.js', false),
   makeScenario('importingFile.js', 'modNoPackageJSON', false),
   makeScenario('importingFile.js', 'modNoPackageJSON/fp', true),
+  makeScenario('importingFile.js', 'modWithPackageJSONAndMatchingExports/fp', false),
+  makeScenario('importingFile.js', 'modWithPackageJSONButNoExportsAtAll/fp', true),
+  makeScenario('./lib/util/leftPad.js', 'modWithPackageJSONAndMatchingExports/fp', false),
+  makeScenario('./lib/util/leftPad.js', 'modWithPackageJSONButNoExportsAtAll/fp', true),
   makeScenario('./lib/util/leftPad.js', '../../mod.js', false),
   makeScenario('./lib/util/leftPad.js', '../../mod', true),
 ];
