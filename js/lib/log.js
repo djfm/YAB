@@ -12,5 +12,7 @@ log.error = (...args) => {
         ...args,
     ].join(' ')));
 };
+const { bold, green, } = colors;
+export const strong = (str) => bold(green(`${str}`));
 export default log;
 //# sourceMappingURL=log.js.map

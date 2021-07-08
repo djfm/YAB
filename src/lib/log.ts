@@ -16,4 +16,12 @@ log.error = (...args: unknown[]): void => {
   ].join(' ')));
 };
 
+const {
+  bold,
+  green,
+} = colors;
+
+export const strong = (str: string | number): string =>
+  bold(green(`${str}`));
+
 export default log;

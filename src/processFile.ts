@@ -9,7 +9,11 @@ import {
 } from './lib/transformation';
 
 import transformFile from './lib/transformFile';
-import log from './lib/log';
+
+import {
+  log,
+  strong,
+} from './lib/log';
 
 // TODO update the source-maps
 export const processFile = async (
@@ -36,13 +40,24 @@ export const processFile = async (
       (t: Transformation) => `    ${
         t?.metaData?.type
       } ${
-        t.originalValue
-      } => ${t.newValue}`,
+        strong([
+          t.originalValue,
+          '→',
+          t.newValue,
+        ].join(' '))
+      }`,
     );
 
     log.info([
-      `performed ${nt} transformation${nt !== 1 ? 's' : ''} in "${pathname}":`,
+      `\nperformed ${
+        nt
+      } transformation${
+        (nt !== 1 ? 's' : '')
+      } in ${
+        strong(pathname)
+      }:`,
       ...details,
+      '',
     ].join('\n'));
   }
 
