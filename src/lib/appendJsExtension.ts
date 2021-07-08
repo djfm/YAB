@@ -208,7 +208,11 @@ export const shouldAppendJsExtension = async (
   );
 
   // TODO handle 'file:///' specifiers
-  if (importSpecifier.startsWith('./') || path.isAbsolute(importSpecifier)) {
+  if (
+    importSpecifier.startsWith('./')
+      || importSpecifier.startsWith('../')
+      || path.isAbsolute(importSpecifier)
+  ) {
     // relative imports - yes I know a path starting with '/'
     // is actually absolute, but they are treated the same by Node's
     // resolution algorithm

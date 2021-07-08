@@ -1,4 +1,4 @@
-import colors from 'colors/safe.js';
+import colors from 'colors/safe';
 export const log = (...args) => {
     // eslint-disable-next-line no-console
     console.log(...args);

@@ -27,6 +27,8 @@ const testData: Scenario[] = [
   makeScenario('importingFile.js', 'colors/safe', true),
   makeScenario('importingFile.js', './mod', true),
   makeScenario('importingFile.js', './mod.js', false),
+  makeScenario('./lib/util/leftPad.js', '../../mod.js', false),
+  makeScenario('./lib/util/leftPad.js', '../../mod', true),
 ];
 
 describe([
