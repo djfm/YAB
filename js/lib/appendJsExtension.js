@@ -221,6 +221,17 @@ export const appendJsExtension = async (ast, metaData) => {
     const potentialReplacements = [];
     traverse(ast, {
         enter: (nodePath) => {
+            if (nodePath.node.trailingComments) {
+                const { node: { trailingComments } } = nodePath;
+                for (const comment of trailingComments) {
+                    if (comment.loc.start.line === comment.loc.end.line) {
+                        const [, maybeSourceMappingURL] = comment.value.split('sourceMappingURL=');
+                        if (maybeSourceMappingURL) {
+                            fileMetaData.sourceMappingURL = maybeSourceMappingURL;
+                        }
+                    }
+                }
+            }
             if (nodePath.isImportDeclaration()) {
                 const { node: { source } } = nodePath;
                 if (source.type === 'StringLiteral') {
