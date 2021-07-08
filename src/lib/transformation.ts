@@ -185,14 +185,16 @@ const applySingleTransformation = (
 };
 
 const recursivelyApplyTransformations = (
-  transformations: readonly Transformation[],
+  transformations: SortedTransformationsArray,
   previousResult: TransformationResult,
 ): TransformationResult => {
   if (transformations.length === 0) {
     return previousResult;
   }
 
-  const [t, ...remainingTransformations] = transformations;
+  const [
+    t, ...remainingTransformations
+  ]: SortedTransformationsArray = transformations;
 
   const newResult = applySingleTransformation(
     t,
