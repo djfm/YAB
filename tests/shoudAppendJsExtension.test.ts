@@ -3,6 +3,7 @@ import path from 'path';
 import { shouldAppendJsExtension } from '../src/lib/appendJsExtension';
 
 type Scenario = {
+  // the file that is using the import statement
   // relative to the "tests/fixtures" director
   // for simplicity
   file: string
