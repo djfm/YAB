@@ -40,8 +40,8 @@ const testData: Scenario[] = [
 ];
 
 describe([
-  'the "shouldAppendJsExtension" determines whether or not',
-  'to append the ".js" extension to the import statement\'s specifier',
+  '"shouldAppendJsExtension" is a function that decides if a ".js" extension',
+  'should be appended to to an import statement',
 ].join(' '), () => {
   test.each(testData)(
     "add '.js' to «import foo from '$specifier';» in file '$file'? $append",
