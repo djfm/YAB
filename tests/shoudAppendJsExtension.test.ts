@@ -34,7 +34,9 @@ const testData: Scenario[] = [
   makeScenario('./lib/util/leftPad.js', 'modWithPackageJSONAndMatchingExports/fp', false),
   makeScenario('./lib/util/leftPad.js', 'modWithPackageJSONButNoExportsAtAll/fp', true),
   makeScenario('./lib/util/leftPad.js', '../../mod.js', false),
-  makeScenario('./lib/util/leftPad.js', '../../mod', true),
+  makeScenario('./lib/util/leftPad.js', '../../mod.js', false),
+  makeScenario('./lib/util/leftPad.js', 'modWithPackageJSONAndMatchingExports/fp', false),
+  makeScenario('./lib/util/leftPad.js', 'modWithPackageJSONButNoExportsAtAll/fp', true),
 ];
 
 describe([
