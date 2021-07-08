@@ -21,21 +21,7 @@ if (!inputPathArgument) {
     bail('Please provide a path to a directory to watch.');
 }
 // TODO update the source-maps
-const processFile = async (pathname, options) => {
-    if (!options?.assumePathAndTypeValid) {
-        try {
-            const s = await stat(pathname);
-            if (!s.isFile()) {
-                bail('Path does not point to a file.');
-            }
-        }
-        catch (e) {
-            if (e.code !== 'ENOENT') {
-                bail(`Unexpected error ${e.code}`);
-            }
-            bail('File does not exist.');
-        }
-    }
+const processFile = async (pathname) => {
     const buffer = await readFile(pathname);
     const sourceCode = buffer.toString();
     const [transformations] = await transformFile(sourceCode, {
@@ -105,9 +91,7 @@ const startWatching = async (dirPath) => {
         if (event === 'add' || event === 'change') {
             if (isProcessable(eventPath)) {
                 try {
-                    await processFile(eventPath, {
-                        assumePathAndTypeValid: true,
-                    });
+                    await processFile(eventPath);
                 }
                 catch (e) {
                     if (e.code === 'BABEL_PARSER_SYNTAX_ERROR') {

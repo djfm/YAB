@@ -24,10 +24,6 @@ import transformFile from './lib/transformFile';
 import log from './lib/log';
 import usage from './usage';
 
-type ProcessFileOptions = {
-  assumePathAndTypeValid?: boolean
-}
-
 const metaURLString = import.meta.url;
 const {
   pathname: thisScriptPathname,
@@ -50,22 +46,7 @@ if (!inputPathArgument) {
 // TODO update the source-maps
 const processFile = async (
   pathname: string,
-  options?: ProcessFileOptions,
 ): Promise<number> => {
-  if (!options?.assumePathAndTypeValid) {
-    try {
-      const s = await stat(pathname);
-      if (!s.isFile()) {
-        bail('Path does not point to a file.');
-      }
-    } catch (e) {
-      if (e.code !== 'ENOENT') {
-        bail(`Unexpected error ${e.code}`);
-      }
-      bail('File does not exist.');
-    }
-  }
-
   const buffer = await readFile(pathname);
   const sourceCode = buffer.toString();
 
@@ -175,9 +156,7 @@ const startWatching = async (dirPath: string): Promise<void> => {
     if (event === 'add' || event === 'change') {
       if (isProcessable(eventPath)) {
         try {
-          await processFile(eventPath, {
-            assumePathAndTypeValid: true,
-          });
+          await processFile(eventPath);
         } catch (e) {
           if (e.code === 'BABEL_PARSER_SYNTAX_ERROR') {
             log.error(
