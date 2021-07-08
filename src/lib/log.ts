@@ -13,7 +13,7 @@ log.error = (...args: unknown[]): void => {
   log(colors.red([
     '[!!!]',
     ...args,
-  ].join('')));
+  ].join(' ')));
 };
 
 export default log;
