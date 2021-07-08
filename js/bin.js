@@ -1,13 +1,12 @@
-import { stat, readFile, writeFile, } from 'fs/promises';
+import { stat, } from 'fs/promises';
 import path from 'path';
 import { URL } from 'url';
 import minimist from 'minimist';
 import chokidar from 'chokidar';
 import { postpone, } from './lib/util.js';
-import { applyTransformations, } from './lib/transformation.js';
-import transformFile from './lib/transformFile.js';
 import log from './lib/log.js';
 import usage from './usage.js';
+import { isPathBlacklisted, processFile, } from './processFile.js';
 const metaURLString = import.meta.url;
 const { pathname: thisScriptPathname, } = new URL(metaURLString);
 const printUsage = () => log(usage);
@@ -20,31 +19,6 @@ const [inputPathArgument] = minimist(process.argv.slice(2))._;
 if (!inputPathArgument) {
     bail('Please provide a path to a directory to watch.');
 }
-// TODO update the source-maps
-const processFile = async (pathname) => {
-    const buffer = await readFile(pathname);
-    const sourceCode = buffer.toString();
-    const [transformations] = await transformFile(sourceCode, {
-        pathname,
-    });
-    const nt = transformations.length;
-    if (nt > 0) {
-        const transformedSource = applyTransformations(transformations, sourceCode);
-        await writeFile(pathname, transformedSource);
-        const details = transformations.map((t) => `    ${t?.metaData?.type} ${t.originalValue} => ${t.newValue}`);
-        log.info([
-            `performed ${nt} transformation${nt !== 1 ? 's' : ''} in "${pathname}":`,
-            ...details,
-        ].join('\n'));
-    }
-    return nt;
-};
-const isPathBlacklisted = (filePath) => {
-    if (/\bnode_modules\b/.test(filePath)) {
-        return true;
-    }
-    return false;
-};
 const startWatching = async (dirPath) => {
     try {
         const s = await stat(dirPath);
