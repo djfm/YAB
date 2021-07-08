@@ -50,10 +50,6 @@ describe([
         'tests', 'fixtures', file,
       );
 
-      if (specifier === 'modNoPackageJSON/fp') {
-        debugger;
-      }
-
       const actual = await shouldAppendJsExtension(
         importingFilePath,
         specifier,
