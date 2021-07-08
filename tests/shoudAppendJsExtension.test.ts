@@ -27,6 +27,8 @@ const testData: Scenario[] = [
   makeScenario('importingFile.js', 'colors/safe', true),
   makeScenario('importingFile.js', './mod', true),
   makeScenario('importingFile.js', './mod.js', false),
+  makeScenario('importingFile.js', 'modNoPackageJSON', false),
+  makeScenario('importingFile.js', 'modNoPackageJSON/fp', true),
   makeScenario('./lib/util/leftPad.js', '../../mod.js', false),
   makeScenario('./lib/util/leftPad.js', '../../mod', true),
 ];
@@ -41,6 +43,10 @@ describe([
       const importingFilePath = path.resolve(
         'tests', 'fixtures', file,
       );
+
+      if (specifier === 'modNoPackageJSON/fp') {
+        debugger;
+      }
 
       const actual = await shouldAppendJsExtension(
         importingFilePath,

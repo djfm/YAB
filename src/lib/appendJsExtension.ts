@@ -258,17 +258,14 @@ export const shouldAppendJsExtension = async (
         packageDirectory,
       );
 
-      if (pjson === 'invalid' || pjson === undefined) {
-        return false;
-      }
-
-      if (
-        hasOwnProperty(pjson, 'exports')
-          && hasOwnProperty(pjson.exports, subPath)
-      ) {
-        // there is a mapping defined for the specifier,
-        // the ESM algorithm should be able to do
-        // is job
+      if (pjson !== undefined
+            && pjson !== 'invalid'
+            && hasOwnProperty(pjson, 'exports')) {
+        // if "exports" is defined it's a bad idea to rewrite
+        // the specifier because either:
+        // - there is a mapping in "exports" for our subPath
+        // - or there is none, in which case the import is illegal
+        //   so returning true would clearly break the spec
         return false;
       }
 
