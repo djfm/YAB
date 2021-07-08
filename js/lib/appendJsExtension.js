@@ -1,6 +1,7 @@
 import path from 'path';
 import { readFile, } from 'fs/promises';
-import { hasOwnProperty, statOrUndefined, } from './util';
+import traverse from './traverse.js';
+import { hasOwnProperty, statOrUndefined, } from './util.js';
 /**
  * Node's resolution algorithm for "import" statements is
  * described here: https://nodejs.org/api/esm.html#esm_resolution_algorithm
@@ -214,72 +215,61 @@ export const shouldAppendJsExtension = async (importingFilePathname, importSpeci
     }
     return false;
 };
-const fail = (node, ...msgParts) => {
-    const msgLines = msgParts.length === 0 ? [
-        'An unspecified error occurred.',
-    ] : msgParts;
-    msgLines.push(`Nearest related AST Node has type ${node.type}.`);
-    throw new Error(msgParts.join('\n'));
-};
-export const addJsExtension = async (programBody, metaData) => {
+export const appendJsExtension = async (ast, metaData) => {
     const transformations = [];
     const fileMetaData = { ...metaData };
-    for (const stmt of programBody) {
-        if (stmt.trailingComments) {
-            const { trailingComments } = stmt;
-            for (const comment of trailingComments) {
-                if (comment.loc.start.line === comment.loc.end.line) {
-                    const [, maybeSourceMappingURL] = comment.value.split('sourceMappingURL=');
-                    if (maybeSourceMappingURL) {
-                        fileMetaData.sourceMappingURL = maybeSourceMappingURL;
+    const potentialReplacements = [];
+    traverse(ast, {
+        enter: (nodePath) => {
+            if (nodePath.isImportDeclaration()) {
+                const { node: { source } } = nodePath;
+                if (source.type === 'StringLiteral') {
+                    if (source.loc && source.extra) {
+                        const { value: specifier, extra: { raw }, } = source;
+                        if (!raw) {
+                            return;
+                        }
+                        if (typeof raw !== 'string') {
+                            return;
+                        }
+                        const { start, end } = source.loc;
+                        const quoteCharacter = raw[0];
+                        if (!['"', "'"].includes(quoteCharacter)) {
+                            return;
+                        }
+                        potentialReplacements.push({
+                            start,
+                            end,
+                            originalValue: raw,
+                            quoteCharacter,
+                            specifier,
+                        });
+                        // eslint-disable-next-line no-await-in-loop
                     }
                 }
             }
+        },
+    });
+    await Promise.all(potentialReplacements.map(async ({ start, end, originalValue, quoteCharacter, specifier, }) => {
+        const shouldAppendExt = await shouldAppendJsExtension(metaData.pathname, specifier);
+        if (shouldAppendExt) {
+            transformations.push({
+                start,
+                end,
+                originalValue,
+                newValue: [
+                    quoteCharacter,
+                    specifier,
+                    '.js',
+                    quoteCharacter,
+                ].join(''),
+                metaData: {
+                    type: 'js-import-extension',
+                },
+            });
         }
-        if (stmt.type === 'ImportDeclaration') {
-            const { source } = stmt;
-            if (source.type !== 'StringLiteral') {
-                fail(source);
-            }
-            if (source.loc === null) {
-                return fail(source, 'missing "loc"');
-            }
-            if (!source.extra) {
-                return fail(source, 'missing "extra"');
-            }
-            const { start, end } = source.loc;
-            const { value: specifier, extra: { raw }, } = source;
-            if (!raw) {
-                return fail(source, 'no value for "extra.raw"');
-            }
-            if (typeof raw !== 'string') {
-                return fail(source, '"extra.raw" is not a string');
-            }
-            const quote = raw[0];
-            if (!['"', "'", '`'].includes(quote)) {
-                fail(source, 'unexpected quote type');
-            }
-            // eslint-disable-next-line no-await-in-loop
-            const shouldAppendExt = await shouldAppendJsExtension(metaData.pathname, specifier);
-            if (shouldAppendExt) {
-                transformations.push({
-                    start,
-                    end,
-                    originalValue: raw,
-                    newValue: [
-                        quote,
-                        specifier,
-                        '.js',
-                        quote,
-                    ].join(''),
-                    metaData: {
-                        type: 'js-import-extension',
-                    },
-                });
-            }
-        }
-    }
+    }));
     return [transformations, fileMetaData];
 };
-export default addJsExtension;
+export default appendJsExtension;
 //# sourceMappingURL=appendJsExtension.js.map

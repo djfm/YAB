@@ -4,8 +4,12 @@ import {
 } from 'fs/promises';
 
 import BT from '@babel/types';
+import traverse from './traverse';
 
-import { Transformation } from './transformation';
+import {
+  Location,
+  Transformation,
+} from './transformation';
 import { FileMetaData } from './transformFile';
 import {
   hasOwnProperty,
@@ -286,80 +290,74 @@ export const shouldAppendJsExtension = async (
   return false;
 };
 
-const fail = (node: BT.Node, ...msgParts: string[]): never => {
-  const msgLines = msgParts.length === 0 ? [
-    'An unspecified error occurred.',
-  ] : msgParts;
+type PotentialReplacement = {
+  start: Location
+  end: Location
+  originalValue: string
+  quoteCharacter: string
+  specifier: string
+}
 
-  msgLines.push(
-    `Nearest related AST Node has type ${node.type}.`,
-  );
-
-  throw new Error(
-    msgParts.join('\n'),
-  );
-};
-
-export const addJsExtension = async (
-  programBody: BT.Statement[],
+export const appendJsExtension = async (
+  ast: BT.Node,
   metaData: FileMetaData,
 
 ): Promise<[Transformation[], FileMetaData]> => {
   const transformations: Transformation[] = [];
   const fileMetaData: FileMetaData = { ...metaData };
 
-  for (const stmt of programBody) {
-    if (stmt.trailingComments) {
-      const { trailingComments } = stmt;
-      for (const comment of trailingComments) {
-        if (comment.loc.start.line === comment.loc.end.line) {
-          const [, maybeSourceMappingURL] = comment.value.split(
-            'sourceMappingURL=',
-          );
-          if (maybeSourceMappingURL) {
-            fileMetaData.sourceMappingURL = maybeSourceMappingURL;
+  const potentialReplacements: PotentialReplacement[] = [];
+
+  traverse(ast, {
+    enter: (nodePath) => {
+      if (nodePath.isImportDeclaration()) {
+        const { node: { source } } = nodePath;
+        if (source.type === 'StringLiteral') {
+          if (source.loc && source.extra) {
+            const {
+              value: specifier,
+              extra: { raw },
+            } = source;
+
+            if (!raw) {
+              return;
+            }
+
+            if (typeof raw !== 'string') {
+              return;
+            }
+
+            const { start, end } = source.loc;
+
+            const quoteCharacter = raw[0];
+
+            if (!['"', "'"].includes(quoteCharacter)) {
+              return;
+            }
+
+            potentialReplacements.push({
+              start,
+              end,
+              originalValue: raw,
+              quoteCharacter,
+              specifier,
+            });
+
+            // eslint-disable-next-line no-await-in-loop
           }
         }
       }
-    }
+    },
+  });
 
-    if (stmt.type === 'ImportDeclaration') {
-      const { source } = stmt;
-
-      if (source.type !== 'StringLiteral') {
-        fail(source);
-      }
-
-      if (source.loc === null) {
-        return fail(source, 'missing "loc"');
-      }
-
-      if (!source.extra) {
-        return fail(source, 'missing "extra"');
-      }
-
-      const { start, end } = source.loc;
-
-      const {
-        value: specifier,
-        extra: { raw },
-      } = source;
-
-      if (!raw) {
-        return fail(source, 'no value for "extra.raw"');
-      }
-
-      if (typeof raw !== 'string') {
-        return fail(source, '"extra.raw" is not a string');
-      }
-
-      const quote = raw[0];
-
-      if (!['"', "'", '`'].includes(quote)) {
-        fail(source, 'unexpected quote type');
-      }
-
-      // eslint-disable-next-line no-await-in-loop
+  await Promise.all(
+    potentialReplacements.map(async ({
+      start,
+      end,
+      originalValue,
+      quoteCharacter,
+      specifier,
+    }) => {
       const shouldAppendExt = await shouldAppendJsExtension(
         metaData.pathname,
         specifier,
@@ -369,22 +367,22 @@ export const addJsExtension = async (
         transformations.push({
           start,
           end,
-          originalValue: raw,
+          originalValue,
           newValue: [
-            quote,
+            quoteCharacter,
             specifier,
             '.js',
-            quote,
+            quoteCharacter,
           ].join(''),
           metaData: {
             type: 'js-import-extension',
           },
         });
       }
-    }
-  }
+    }),
+  );
 
   return [transformations, fileMetaData];
 };
 
-export default addJsExtension;
+export default appendJsExtension;
