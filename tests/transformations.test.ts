@@ -161,6 +161,51 @@ describe('applying transformations', () => {
     expect(transformedSource).toBe(expected);
   });
 
+  test('a single multi-line transformation', () => {
+    const source = src`
+    $..........$
+    $....abcdef$
+    $ghi.......$
+    $..........$
+    $..........$
+    `;
+
+    const expected = src`
+    $..........$
+    $....jk$
+    $l.......$
+    $..........$
+    $..........$
+    `;
+
+    const t: Transformation = {
+      start: {
+        line: 2,
+        column: 4,
+      },
+      end: {
+        line: 3,
+        column: 3,
+      },
+      originalValue: 'abcdef\nghi',
+      newValue: 'jk\nl',
+    };
+
+    const transformations = [t];
+
+    const transformedSource = applyTransformations(
+      transformations,
+      source,
+    );
+
+    verifyExpected(
+      transformations,
+      expected, source,
+    );
+
+    expect(transformedSource).toBe(expected);
+  });
+
   test('two valid transformations', () => {
     const source = src`
     $..........$

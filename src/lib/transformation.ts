@@ -168,7 +168,7 @@ const applySingleTransformation = (
     // half of the last of the modified line
     // - set to the empty string in the multi-line case
     leftPartOfLastModifiedLine,
-  ].join('');
+  ].join(isSourceMultiLine ? '\n' : '');
 
   if (source !== transformation.originalValue) {
     throw new Error(
