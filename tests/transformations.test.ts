@@ -125,6 +125,14 @@ describe('applying transformations', () => {
     $..........$
     `;
 
+    const expected = src`
+    $..........$
+    $....xy...$
+    $..........$
+    $..........$
+    $..........$
+    `;
+
     const t: Transformation = {
       start: {
         line: 2,
@@ -137,14 +145,6 @@ describe('applying transformations', () => {
       originalValue: 'abc',
       newValue: 'xy',
     };
-
-    const expected = src`
-    $..........$
-    $....xy...$
-    $..........$
-    $..........$
-    $..........$
-    `;
 
     const transformations = [t];
 
@@ -167,6 +167,14 @@ describe('applying transformations', () => {
     $....abc...$
     $..........$
     $def.......$
+    $..........$
+    `;
+
+    const expected = src`
+    $..........$
+    $....xy...$
+    $..........$
+    $poulpe.......$
     $..........$
     `;
 
@@ -196,14 +204,6 @@ describe('applying transformations', () => {
       newValue: 'poulpe',
     };
 
-    const expected = src`
-    $..........$
-    $....xy...$
-    $..........$
-    $poulpe.......$
-    $..........$
-    `;
-
     const transformations = [t, u];
 
     verifyExpected(
@@ -223,6 +223,13 @@ describe('applying transformations', () => {
     const source = src`
     $..........$
     $.ab...cd..$
+    $..........$
+    $..........$
+    `;
+
+    const expected = src`
+    $..........$
+    $.AB...CD..$
     $..........$
     $..........$
     `;
@@ -252,14 +259,6 @@ describe('applying transformations', () => {
       originalValue: 'cd',
       newValue: 'CD',
     };
-
-    const expected = src`
-    $..........$
-    $.AB...CD..$
-    $..........$
-    $..........$
-    `;
-
     const transformations = [t, u];
 
     verifyExpected(
@@ -285,6 +284,14 @@ describe('applying transformations', () => {
     $.ab.......$
     $..........$
     $......cd..$
+    `;
+
+    const expected = src`
+    $..........$
+    $.A$
+    $B.......$
+    $..........$
+    $......CD..$
     `;
 
     const t: Transformation = {
@@ -313,14 +320,6 @@ describe('applying transformations', () => {
       newValue: 'CD',
     };
 
-    const expected = src`
-    $..........$
-    $.A$
-    $B.......$
-    $..........$
-    $......CD..$
-    `;
-
     const transformations = [t, u];
 
     verifyExpected(
@@ -345,6 +344,16 @@ describe('applying transformations', () => {
     $.ab.......$
     $....cde...$
     $......fg..$
+    `;
+
+    const expected = src`
+    $..........$
+    $.A$
+    $B.......$
+    $....C$
+    $D...$
+    $......F$
+    $G..$
     `;
 
     const t: Transformation = {
@@ -385,16 +394,6 @@ describe('applying transformations', () => {
       originalValue: 'fg',
       newValue: 'F\nG',
     };
-
-    const expected = src`
-    $..........$
-    $.A$
-    $B.......$
-    $....C$
-    $D...$
-    $......F$
-    $G..$
-    `;
 
     const transformations = [t, u, v];
 
