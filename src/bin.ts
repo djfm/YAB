@@ -76,8 +76,8 @@ const startWatching = async (dirPath: string): Promise<void> => {
       nFiles += 1;
       if (isProcessable(eventPath)) {
         nProcessable += 1;
-        report();
       }
+      report();
     }
 
     if (event === 'addDir') {
