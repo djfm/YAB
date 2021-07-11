@@ -275,6 +275,64 @@ describe('applying transformations', () => {
   });
 
   test([
+    'two transformations on the same line',
+    'one of which offsets the line',
+  ].join(' '), () => {
+    const source = src`
+    $..........$
+    $.ab...cd..$
+    $..........$
+    $..........$
+    `;
+
+    const expected = src`
+    $..........$
+    $.ABXYZ...CD..$
+    $..........$
+    $..........$
+    `;
+
+    const t: Transformation = {
+      start: {
+        line: 2,
+        column: 1,
+      },
+      end: {
+        line: 2,
+        column: 3,
+      },
+      originalValue: 'ab',
+      newValue: 'ABXYZ',
+    };
+
+    const u: Transformation = {
+      start: {
+        line: 2,
+        column: 6,
+      },
+      end: {
+        line: 2,
+        column: 8,
+      },
+      originalValue: 'cd',
+      newValue: 'CD',
+    };
+    const transformations = [t, u];
+
+    verifyExpected(
+      transformations,
+      expected, source,
+    );
+
+    const transformedSource = applyTransformations(
+      transformations,
+      source,
+    );
+
+    expect(transformedSource).toBe(expected);
+  });
+
+  test([
     'two transformations on different lines,',
     'one of which introduces a new line,',
     'most simple scenario',

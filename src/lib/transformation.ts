@@ -11,201 +11,25 @@ export type Transformation = {
   metaData?: Record<string, unknown>
 }
 
-type OriginalToTransformedConverter = (
-  originalLocation: Location
-) => Location
-
-type TransformationResult = {
-  sourceLines: string[]
-  convertToTransformed: OriginalToTransformedConverter
-}
-
-export type SortedTransformationsArray = Readonly<Transformation[]>
+type SortOrder = 'asc' | 'desc';
 
 export const sortTransformations = (
   transformations: Transformation[],
-): SortedTransformationsArray =>
-  transformations.slice().sort((a, b) => {
+  sortOrder: SortOrder = 'asc',
+): Transformation[] => {
+  const sign = sortOrder === 'asc' ? -1 : 1;
+
+  return transformations.slice().sort((a, b) => {
     if (a.start.line < b.start.line) {
-      return -1;
+      return sign;
     }
 
     if (a.start.line > b.start.line) {
-      return 1;
+      return -sign;
     }
 
-    return a.start.column - b.start.column;
+    return sign * (b.start.column - a.start.column);
   });
-
-// TODO this method is probably not robust enough even-though unit-tested
-// for basic cases and some a bit more advanced
-const applySingleTransformation = (
-  transformation: Transformation,
-  sourceLines: string[],
-  convertToTransformed: OriginalToTransformedConverter,
-): TransformationResult => {
-  const convertedStart = convertToTransformed(
-    transformation.start,
-  );
-
-  const convertedEnd = convertToTransformed(
-    transformation.end,
-  );
-
-  const isSourceMultiLine = convertedStart.line
-    < convertedEnd.line;
-
-  if (sourceLines.length < convertedStart.line) {
-    throw new Error(
-      'transformation cannot be applied - not enough input lines',
-    );
-  }
-
-  // lines before our target that are sure
-  // to remain unchanged
-  const linesBefore = sourceLines.slice(
-    0,
-    convertedStart.line - 1,
-  );
-
-  // lines that we will change, totally or partially
-  const linesToModify = sourceLines.slice(
-    convertedStart.line - 1,
-    convertedEnd.line,
-  );
-
-  // lines after our target that are sure
-  // to remain unchanged
-  const linesAfter = sourceLines.slice(
-    convertedEnd.line,
-  );
-
-  // the part in the first modified line that we won't transform
-  const leftPartOfFirstModifiedLine = linesToModify[0]
-    .slice(0, convertedStart.column);
-
-  // the part in the first modified line that we will transform
-  const rightPartOfFirstModifiedLine = linesToModify[0]
-    .slice(
-      convertedStart.column,
-      isSourceMultiLine ? undefined : convertedEnd.column,
-    );
-
-  // the part in the last modified line that we will transform
-  // it's empty in the single line case because we have it captured
-  // in the rightPartOfFirstModifiedLine already
-  const leftPartOfLastModifiedLine = isSourceMultiLine
-    ? linesToModify[linesToModify.length - 1]
-      .slice(0, convertedEnd.column)
-    : '';
-
-  // the part in the last modified line that we won't transform
-  // works for both single and multi-line transformations
-  const rightPartOfLastModifiedLined = linesToModify[
-    linesToModify.length - 1
-  ].slice(convertedEnd.column);
-
-  const source = [
-    // half of the first modified line
-    rightPartOfFirstModifiedLine,
-
-    // the full lines that are neither the first line
-    // to be modified nor the last one
-    // - will be an empty list in the single line case
-    ...linesToModify.slice(1, -1),
-
-    // half of the last of the modified line
-    // - set to the empty string in the multi-line case
-    leftPartOfLastModifiedLine,
-  ].join('');
-
-  if (source !== transformation.originalValue) {
-    throw new Error(
-      `did not find expected source string - got "${
-        source
-      }" instead of ${
-        transformation.originalValue
-      }`,
-    );
-  }
-
-  const newModifiedLines = [
-    // the part of the first affected line that
-    // we did not alter
-    leftPartOfFirstModifiedLine,
-
-    // the replacement value that was specified
-    transformation.newValue,
-
-    // the part of the last affected line
-    // that we did not alter
-    rightPartOfLastModifiedLined,
-  ].join('').split('\n');
-
-  const newSourceLines = [
-    ...linesBefore,
-    ...newModifiedLines,
-    ...linesAfter,
-  ];
-
-  // TODO won't work in a ton of cases,
-  // this is just a proof of concept and
-  // a draft
-  const newConverter = (loc: Location) => {
-    // we would return baseLoc if we hadn't changed
-    // anything
-    const baseLoc = convertToTransformed(loc);
-
-    // the adjustment factor to apply to baseLoc.line
-    // if we need to - but we don't necessarily need to,
-    // depending on whether the target of baseLoc was
-    // affected by our operation
-    const deltaLines = newModifiedLines.length
-      - linesToModify.length;
-
-    if (baseLoc.line > convertedEnd.line) {
-      // we just need to offset the line,
-      // the column couldn't have changed
-
-      return {
-        line: baseLoc.line + deltaLines,
-        column: baseLoc.column,
-      };
-    }
-
-    // the default is to assume the coordinates
-    // haven't changed
-    return baseLoc;
-  };
-
-  return {
-    sourceLines: newSourceLines,
-    convertToTransformed: newConverter,
-  };
-};
-
-const recursivelyApplyTransformations = (
-  transformations: SortedTransformationsArray,
-  previousResult: TransformationResult,
-): TransformationResult => {
-  if (transformations.length === 0) {
-    return previousResult;
-  }
-
-  const [
-    t, ...remainingTransformations
-  ]: SortedTransformationsArray = transformations;
-
-  const newResult = applySingleTransformation(
-    t,
-    previousResult.sourceLines,
-    previousResult.convertToTransformed,
-  );
-
-  return recursivelyApplyTransformations(
-    remainingTransformations,
-    newResult,
-  );
 };
 
 /**
@@ -217,7 +41,7 @@ const recursivelyApplyTransformations = (
  * sorted (with sortTransformations).
  */
 const transformationsOverlap = (
-  sortedTransformations: SortedTransformationsArray,
+  sortedTransformations: Readonly<Transformation[]>,
 ): boolean => {
   // eslint-disable-next-line no-labels
   outerLoop: for (let i = 0; i < sortedTransformations.length - 1; i += 1) {
@@ -271,31 +95,133 @@ const transformationsOverlap = (
   return false;
 };
 
+// TODO this method is probably not robust enough even-though unit-tested
+// for basic cases and some a bit more advanced
+const applySingleTransformation = (
+  sourceLines: string[],
+  transformation: Readonly<Transformation>,
+): string[] => {
+  const { start, end } = transformation;
+
+  const isSourceMultiLine = start.line
+    < end.line;
+
+  if (sourceLines.length < start.line) {
+    throw new Error(
+      'transformation cannot be applied - not enough input lines',
+    );
+  }
+
+  // lines before our target that are sure
+  // to remain unchanged
+  const linesBefore = sourceLines.slice(
+    0,
+    start.line - 1,
+  );
+
+  // lines that we will change, totally or partially
+  const linesToModify = sourceLines.slice(
+    start.line - 1,
+    end.line,
+  );
+
+  // lines after our target that are sure
+  // to remain unchanged
+  const linesAfter = sourceLines.slice(
+    end.line,
+  );
+
+  // the part in the first modified line that we won't transform
+  const leftPartOfFirstModifiedLine = linesToModify[0]
+    .slice(0, start.column);
+
+  // the part in the first modified line that we will transform
+  const rightPartOfFirstModifiedLine = linesToModify[0]
+    .slice(
+      start.column,
+      isSourceMultiLine ? undefined : end.column,
+    );
+
+  // the part in the last modified line that we will transform
+  // it's empty in the single line case because we have it captured
+  // in the rightPartOfFirstModifiedLine already
+  const leftPartOfLastModifiedLine = isSourceMultiLine
+    ? linesToModify[linesToModify.length - 1]
+      .slice(0, end.column)
+    : '';
+
+  // the part in the last modified line that we won't transform
+  // works for both single and multi-line transformations
+  const rightPartOfLastModifiedLined = linesToModify[
+    linesToModify.length - 1
+  ].slice(end.column);
+
+  const source = [
+    // half of the first modified line
+    rightPartOfFirstModifiedLine,
+
+    // the full lines that are neither the first line
+    // to be modified nor the last one
+    // - will be an empty list in the single line case
+    ...linesToModify.slice(1, -1),
+
+    // half of the last of the modified line
+    // - set to the empty string in the multi-line case
+    leftPartOfLastModifiedLine,
+  ].join('');
+
+  if (source !== transformation.originalValue) {
+    throw new Error(
+      `did not find expected source string - got "${
+        source
+      }" instead of ${
+        transformation.originalValue
+      }`,
+    );
+  }
+
+  const newModifiedLines = [
+    // the part of the first affected line that
+    // we did not alter
+    leftPartOfFirstModifiedLine,
+
+    // the replacement value that was specified
+    transformation.newValue,
+
+    // the part of the last affected line
+    // that we did not alter
+    rightPartOfLastModifiedLined,
+  ].join('').split('\n');
+
+  return [
+    ...linesBefore,
+    ...newModifiedLines,
+    ...linesAfter,
+  ];
+};
+
 export const applyTransformations = (
   unorderedTransformations: Transformation[],
   sourceCode: string,
 ): string => {
-  const transformations = sortTransformations(
+  const ascTransformations = sortTransformations(
     unorderedTransformations,
+    'asc',
   );
 
-  if (transformationsOverlap(transformations)) {
+  if (transformationsOverlap(ascTransformations)) {
     throw new Error('overlapping transformations cannot be applied');
   }
 
-  const sourceLines = sourceCode.split('\n');
-
-  const initialState: TransformationResult = {
-    sourceLines,
-    convertToTransformed: (loc: Location) => loc,
-  };
-
-  const result = recursivelyApplyTransformations(
-    transformations,
-    initialState,
+  const descTransformations = sortTransformations(
+    unorderedTransformations,
+    'desc',
   );
 
-  return result.sourceLines.join('\n');
+  return descTransformations.reduce(
+    applySingleTransformation,
+    sourceCode.split('\n'),
+  ).join('\n');
 };
 
 export default applyTransformations;
