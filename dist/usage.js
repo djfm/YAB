@@ -41,10 +41,19 @@ on Node.js.
 
 # Usage
 
-Just run the script "dist/bin.js" on a directory - the most
+Just run the "yab" script on a directory - the most
 useful scenario is probably to run it in on the "outDir" of a
 TypeScript's 'tsconfig.json' file.
 
+## With yarn:
+
+\`yarn yab path/to/outDir\`
+
+## Or:
+
+\`node_modules/.bin/yab path/to/outDir\`
+
+The default is to watch the directory for changes.
 Alternatively, pass the "--once" option to have the script return
 as soon as it has done its job.
 `.trim();
