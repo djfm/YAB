@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/djfm/YAB.svg?branch=main)](https://travis-ci.com/djfm/YAB)
+
 # YAB is Yet Another Build tool.
 
 It **appends the `.js` file extensions to the import statements
