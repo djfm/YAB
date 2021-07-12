@@ -42,7 +42,6 @@
     "chokidar": "^3.5.2",
     "colors": "^1.4.0",
     "concurrently": "^6.2.0",
-    "minimist": "^1.2.5",
-    "package.json": "^2.0.1"
+    "minimist": "^1.2.5"
   }
 }
