@@ -1,0 +1,4 @@
+{
+  "ignore": ["*.js.map", "*.ts", "tests/*"],
+  "delay": 1000
+}

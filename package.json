@@ -19,7 +19,7 @@
     "transpile": "yarn clean && echo 'transpiling YAB' && yarn tsc --project ./tsconfig.json",
     "clean-and-transform-unstable": "yarn transpile && node dist/bin.js js-unstable --once",
     "transpile-watch": "yarn tsc --project ./tsconfig.json --watch",
-    "run-unstable": "node js-unstable/bin.js",
+    "run-unstable": "nodemon js-unstable/bin.js",
     "dev": "yarn clean-and-transform-unstable && echo \"Now using the development version of YAB to watch its own transpiled code.\" && concurrently -n transpile,transform,test \"yarn transpile-watch\" \"yarn run-unstable js-unstable\" \"yarn tdd\"",
     "test": "NODE_OPTIONS=--experimental-vm-modules yarn jest",
     "test-watch": "yarn tdd",
@@ -37,7 +37,8 @@
     "eslint-plugin-import": "^2.23.4",
     "jest": "^27.0.6",
     "ts-jest": "^27.0.3",
-    "typescript": "^4.3.5"
+    "typescript": "^4.3.5",
+    "nodemon": "^2.0.12"
   },
   "dependencies": {
     "@babel/parser": "^7.14.7",
