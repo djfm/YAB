@@ -2,7 +2,7 @@ import colors from 'colors/safe.js';
 const { blue, bold, green, red, yellow, } = colors;
 const toString = (args) => {
     if (typeof args === 'string' || typeof args === 'number') {
-        return `${args};`;
+        return `${args}`;
     }
     if (args instanceof Array) {
         return args.map(toString).join(' ');
