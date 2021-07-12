@@ -15,6 +15,9 @@ import {
   strong,
 } from './lib/log';
 
+export const isProcessable = (p: string): boolean =>
+  p.endsWith('.js');
+
 // TODO update the source-maps
 export const processFile = async (
   pathname: string,
@@ -62,11 +65,4 @@ export const processFile = async (
   }
 
   return nt;
-};
-export const isPathBlacklisted = (filePath: string): boolean => {
-  if (/\bnode_modules\b/.test(filePath)) {
-    return true;
-  }
-
-  return false;
 };

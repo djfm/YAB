@@ -1,4 +1,5 @@
-import { stat } from 'fs/promises';
+import { readdir, stat } from 'fs/promises';
+import path from 'path';
 
 type voidReturningFunction = (
   ...args: unknown[]
@@ -55,3 +56,33 @@ export const hasOwnProperty = <property extends PropertyKey>(
   prop: property,
 ): obj is Record<property, unknown> =>
     Object.prototype.hasOwnProperty.call(obj, prop);
+
+/**
+ * Recursively reads a directory's content, returning
+ * only the files with their relative paths
+ * relative to dirPathName.
+ */
+export const recursivelyReadDirectory = async (
+  dirPathname: string,
+): Promise<string[]> => {
+  const dirEntries = await readdir(dirPathname);
+
+  const deeperEntries = await Promise.all(dirEntries.map(
+    async (entry: string): Promise<string[]> => {
+      const entryPath = path.join(dirPathname, entry);
+
+      const entryStat = await stat(entryPath);
+
+      if (entryStat.isDirectory()) {
+        const nested = await recursivelyReadDirectory(entryPath);
+        return nested;
+      }
+
+      return [entryPath];
+    },
+  ));
+
+  const flattenedEntries = ([] as string[]).concat(...deeperEntries);
+
+  return flattenedEntries;
+};

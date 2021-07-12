@@ -9,14 +9,16 @@ import minimist from 'minimist';
 import chokidar from 'chokidar';
 
 import {
+  hasOwnProperty,
   postpone,
+  recursivelyReadDirectory,
 } from './lib/util';
 
-import log from './lib/log';
+import log, { strong } from './lib/log';
 import usage from './usage';
 
 import {
-  isPathBlacklisted,
+  isProcessable,
   processFile,
 } from './processFile';
 
@@ -33,11 +35,32 @@ const bail = (errMessage: string, exitCode = 1): never => {
   process.exit(exitCode);
 };
 
-const [inputPathArgument] = minimist(process.argv.slice(2))._;
+const {
+  _: [userProvidedPathname],
+  ...options
+} = minimist(process.argv.slice(2));
 
-if (!inputPathArgument) {
+if (!userProvidedPathname) {
   bail('Please provide a path to a directory to watch.');
 }
+
+const tryAndProcessFile = async (pathname: string) => {
+  try {
+    await processFile(pathname);
+  } catch (e) {
+    if (e.code === 'BABEL_PARSER_SYNTAX_ERROR') {
+      log.error(
+        `Babel was not able to parse the file "${pathname}", so it wasn't processed.`,
+        'The error reported by babel was:',
+        e.message,
+        'You should probably check the source TypeScript file.',
+        'Your JavaScript Application will most likely not be able to run.',
+      );
+    } else {
+      throw e;
+    }
+  }
+};
 
 const startWatching = async (dirPath: string): Promise<void> => {
   try {
@@ -66,10 +89,6 @@ const startWatching = async (dirPath: string): Promise<void> => {
       } are of interest to us`,
     ),
   );
-
-  const isProcessable = (p: string) =>
-    p.endsWith('.js')
-    && !isPathBlacklisted(p);
 
   chokidar.watch(dirPath).on('all', async (event, eventPath) => {
     if (event === 'add') {
@@ -100,26 +119,29 @@ const startWatching = async (dirPath: string): Promise<void> => {
 
     if (event === 'add' || event === 'change') {
       if (isProcessable(eventPath)) {
-        try {
-          await processFile(eventPath);
-        } catch (e) {
-          if (e.code === 'BABEL_PARSER_SYNTAX_ERROR') {
-            log.error(
-              `Babel was not able to parse the file "${eventPath}", so it wasn't processed.`,
-              'The error reported by babel was:',
-              e.message,
-            );
-          } else {
-            throw e;
-          }
-        }
-
+        tryAndProcessFile(eventPath);
         if (path.resolve(eventPath) === thisScriptPathname) {
-          log.info('[YAB is watching its own transpilation directory]');
+          log.warning('YAB is watching its own transpilation directory');
         }
       }
     }
   });
 };
 
-startWatching(inputPathArgument);
+const processOnce = async (pathname: string) => {
+  const allFiles = await recursivelyReadDirectory(pathname);
+  const processableFiles = allFiles.filter(isProcessable);
+  log.info(`Processing files in "${pathname}" and then exiting.`);
+  log.info('Found files:');
+  processableFiles.forEach((file) => {
+    log.info(`  ${strong(file)}`);
+  });
+  await Promise.all(processableFiles.map(tryAndProcessFile));
+  log.info('All done here. Have a nice day!');
+};
+
+if (hasOwnProperty(options, 'once')) {
+  processOnce(userProvidedPathname);
+} else {
+  startWatching(userProvidedPathname);
+}

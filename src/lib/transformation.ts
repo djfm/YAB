@@ -11,7 +11,7 @@ export type Transformation = {
   metaData?: Record<string, unknown>
 }
 
-type SortOrder = 'asc' | 'desc';
+type SortOrder = 'asc' | 'desc' | 'lol';
 
 export const sortTransformations = (
   transformations: Transformation[],
