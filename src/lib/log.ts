@@ -10,7 +10,7 @@ const {
 
 const toString = (args: unknown[] | unknown): string => {
   if (typeof args === 'string' || typeof args === 'number') {
-    return `${args};`;
+    return `${args}`;
   }
 
   if (args instanceof Array) {
