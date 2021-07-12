@@ -11,11 +11,11 @@
   "scripts": {
     "lint": "eslint src tests",
     "clean": "echo 'cleaning old JS generated files...' && rm -Rf js-unstable",
-    "transpile": "yarn clean && echo 'transpiling' && yarn tsc --project ./tsconfig.json",
+    "transpile": "yarn clean && echo 'transpiling YAB' && yarn tsc --project ./tsconfig.json",
     "clean-and-transform-unstable": "yarn transpile && node dist/bin.js js-unstable --once",
     "transpile-watch": "yarn tsc --project ./tsconfig.json --watch",
     "run-unstable": "node js-unstable/bin.js",
-    "dev": "yarn clean-and-transform-unstable && echo \"Now using the development version of YAB to watch its own transpiled code.\" && concurrently --kill-others \"yarn transpile-watch\" \"yarn run-unstable js-unstable\" \"yarn tdd\"",
+    "dev": "yarn clean-and-transform-unstable && echo \"Now using the development version of YAB to watch its own transpiled code.\" && concurrently -n transpile,transform,test \"yarn transpile-watch\" \"yarn run-unstable js-unstable\" \"yarn tdd\"",
     "test": "NODE_OPTIONS=--experimental-vm-modules yarn jest",
     "test-watch": "yarn tdd",
     "tdd": "NODE_OPTIONS=--experimental-vm-modules yarn jest --watch",
@@ -42,6 +42,7 @@
     "chokidar": "^3.5.2",
     "colors": "^1.4.0",
     "concurrently": "^6.2.0",
-    "minimist": "^1.2.5"
+    "minimist": "^1.2.5",
+    "package.json": "^2.0.1"
   }
 }
