@@ -1060,6 +1060,33 @@ __metadata:
   languageName: node
   linkType: hard
 
+"add-js-extension@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "add-js-extension@workspace:."
+  dependencies:
+    "@babel/parser": ^7.14.7
+    "@babel/traverse": ^7.14.7
+    "@babel/types": ^7.14.5
+    "@types/jest": ^26.0.23
+    "@types/minimist": ^1.2.1
+    "@types/node": ^16.0.0
+    "@typescript-eslint/eslint-plugin": latest
+    "@typescript-eslint/parser": latest
+    chokidar: ^3.5.2
+    colors: ^1.4.0
+    concurrently: ^6.2.0
+    eslint: ^7.30.0
+    eslint-config-airbnb-base: latest
+    eslint-plugin-import: ^2.23.4
+    jest: ^27.0.6
+    minimist: ^1.2.5
+    ts-jest: ^27.0.3
+    typescript: ^4.3.5
+  bin:
+    yab: ./dist/bin.js
+  languageName: unknown
+  linkType: soft
+
 "agent-base@npm:6, agent-base@npm:^6.0.2":
   version: 6.0.2
   resolution: "agent-base@npm:6.0.2"
@@ -5563,31 +5590,6 @@ typescript@^4.3.5:
   checksum: 56275bfa72a8a585c4d2905b086862fb881dfe7871adcefe4ecf4c1a6a78c6389b459b427c0a8672ccdb09731a78143acc71f0bcc8dc8d8427869fafe7f18b95
   languageName: node
   linkType: hard
-
-"yab-is-yet-another-builder@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "yab-is-yet-another-builder@workspace:."
-  dependencies:
-    "@babel/parser": ^7.14.7
-    "@babel/traverse": ^7.14.7
-    "@babel/types": ^7.14.5
-    "@types/jest": ^26.0.23
-    "@types/minimist": ^1.2.1
-    "@types/node": ^16.0.0
-    "@typescript-eslint/eslint-plugin": latest
-    "@typescript-eslint/parser": latest
-    chokidar: ^3.5.2
-    colors: ^1.4.0
-    concurrently: ^6.2.0
-    eslint: ^7.30.0
-    eslint-config-airbnb-base: latest
-    eslint-plugin-import: ^2.23.4
-    jest: ^27.0.6
-    minimist: ^1.2.5
-    ts-jest: ^27.0.3
-    typescript: ^4.3.5
-  languageName: unknown
-  linkType: soft
 
 "yallist@npm:^4.0.0":
   version: 4.0.0
