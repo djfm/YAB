@@ -8,6 +8,9 @@
   "author": "djfm <fm.de.jouvencel@gmail.com>",
   "license": "MIT",
   "private": true,
+  "bin": {
+    "yab": "./dist/bin.js"
+  },
   "scripts": {
     "lint": "eslint src tests",
     "clean": "echo 'cleaning old JS generated files...' && rm -Rf js-unstable",
