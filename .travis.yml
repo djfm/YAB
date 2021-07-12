@@ -3,5 +3,6 @@ install: yarn
 node_js:
   - 16.4
 script:
+  - yarn
   - yarn test
 
